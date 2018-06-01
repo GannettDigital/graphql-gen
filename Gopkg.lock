@@ -2,14 +2,10 @@
 
 
 [[projects]]
+  branch = "master"
   name = "github.com/GannettDigital/graphql"
-  packages = ["."]
-  revision = "1e23489041ba90a66f317fe0deccb236a2fff3cb"
-  version = "v0.7.5"
-
-[[projects]]
-  name = "github.com/graphql-go/graphql"
   packages = [
+    ".",
     "gqlerrors",
     "language/ast",
     "language/kinds",
@@ -21,12 +17,11 @@
     "language/typeInfo",
     "language/visitor"
   ]
-  revision = "1e23489041ba90a66f317fe0deccb236a2fff3cb"
-  version = "v0.7.5"
+  revision = "69afe7345de27eb1932c40e2d1c9d0cec1ac6b56"
 
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "012c7adb18cc8413b3673859c1b151a0188af140671c96669974ac29d74e5d7f"
+  inputs-digest = "df2154a452f9833d74c89d8e846a2604835734067da16d2559cae5d3cbe971a5"
   solver-name = "gps-cdcl"
   solver-version = 1
