@@ -95,3 +95,9 @@ func fieldName(field reflect.StructField) string {
 
 	return strings.ToLower(strings.Replace(field.Name, "_", "",-1))
 }
+
+// fullFieldName returns the name of the field with its parent name included.
+func fullFieldName(name, parent string) string {
+	return strings.Join([]string{parent, name}, FieldPathSeperator)
+}
+

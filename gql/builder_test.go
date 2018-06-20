@@ -247,10 +247,21 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 			want:        []graphql.Type{testEmbedType, testDoubleEmbedType},
 		},
 		{
-			description: "Additional custom field",
+			description: "Additional custom field in the interface",
 			structs:     []interface{}{testEmbed{}},
 			fieldAdditions: map[string][]*graphql.Field{
-				"": {{
+				"TestBase": {{
+					Name: "extraid",
+					Type: graphql.String,
+				}},
+			},
+			want: []graphql.Type{testEmbedType2},
+		},
+		{
+			description: "Additional custom field in the given object",
+			structs:     []interface{}{testEmbed{}},
+			fieldAdditions: map[string][]*graphql.Field{
+				"testembed": {{
 					Name: "extraid",
 					Type: graphql.String,
 				}},
@@ -261,7 +272,7 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 			description: "Custom field overwrites generated field",
 			structs:     []interface{}{testEmbed{}},
 			fieldAdditions: map[string][]*graphql.Field{
-				"": {{
+				"TestBase": {{
 					Name: "id",
 					Type: graphql.Int,
 				}},
