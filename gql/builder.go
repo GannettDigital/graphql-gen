@@ -124,7 +124,7 @@ func (ob *ObjectBuilder) BuildInterfaces() map[string]*graphql.Interface {
 
 	for name, embed := range allEmbeds {
 		sType := reflect.TypeOf(embed)
-		ob.interfaceFields[name] = ob.buildFields(sType, "", nil)
+		ob.interfaceFields[name] = ob.buildFields(sType, name, nil)
 
 		ob.interfaces[name] = graphql.NewInterface(graphql.InterfaceConfig{
 			Name:        name,
@@ -181,7 +181,7 @@ func (ob *ObjectBuilder) buildType(srcStruct interface{}) graphql.Type {
 }
 
 // buildObject does the heavy lifting in building a GraphQL object, it can be called recursively as Objects can have
-// fiedls which are themselves objects.  This method relies heavily on the buildFields
+// fields which are themselves objects.  This method relies heavily on the buildFields
 // method which does reflection on the given type to discover the fields. If a name is given that name is used
 // for the object, otherwise the name of the struct is used as the name. If the object is part of an interface the graphql.Interface and the set of base fields for
 // that interface are expected to be provided as the fields for each type that implements an interface must match
@@ -190,7 +190,7 @@ func (ob *ObjectBuilder) buildObject(sType reflect.Type, name string, gInterface
 	if name == "" {
 		name = sType.Name()
 	}
-	name = strings.ToLower(name)
+	name = strings.ToLower(name) // TODO for v2 consider removing this and the similar line in resolveObjectByName
 
 	gfields := ob.buildFields(sType, name, baseFields)
 
@@ -316,7 +316,7 @@ func (ob *ObjectBuilder) graphQLType(rType reflect.Type, name, parent string) gr
 func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graphql.Object {
 	sType := reflect.TypeOf(p.Value)
 	name := sType.Name()
-	name = strings.ToLower(name)
+	name = strings.ToLower(name) // TODO for v2 consider removing this and the similar line in buildObject
 	return ob.objects[name]
 }
 
@@ -364,11 +364,6 @@ func findObjectField(fields graphql.FieldDefinitionMap, path []string) *graphql.
 		return child
 	}
 	return findObjectField(child.Fields(), path[1:])
-}
-
-// fullFieldName returns the name of the field with its parent name included.
-func fullFieldName(name, parent string) string {
-	return strings.Join([]string{parent, name}, FieldPathSeperator)
 }
 
 // resolveGraphQLObject attempts to return an underlying graphql.Object found in the grapqhl.Output.
