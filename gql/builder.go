@@ -316,7 +316,7 @@ func (ob *ObjectBuilder) graphQLType(rType reflect.Type, name, parent string) gr
 func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graphql.Object {
 	sType := reflect.TypeOf(p.Value)
 	name := sType.Name()
-	name = strings.ToLower(name) // TODO for v2 consider removing this and the similar line in buildObject
+	name = ob.prefix + strings.ToLower(name) // TODO for v2 consider removing this and the similar line in buildObject
 	return ob.objects[name]
 }
 
