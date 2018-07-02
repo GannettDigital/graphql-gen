@@ -134,7 +134,7 @@ func TestObjectBuilder_BuildInterfaces(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ob := NewObjectBuilder(test.structs, nil)
+		ob := NewObjectBuilder(test.structs, "", nil)
 
 		got := ob.BuildInterfaces()
 
@@ -159,7 +159,21 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 	},
 	})
 	testBase2Interface := graphql.NewInterface(graphql.InterfaceConfig{Name: "TestBase2", Fields: graphql.Fields{
+		"id2": &graphql.Field{
+			Name: "id2",
+			Type: graphql.NewNonNull(graphql.String),
+		},
+	},
+	})
+	testBasePrefixInterface := graphql.NewInterface(graphql.InterfaceConfig{Name: "prefixTestBase", Fields: graphql.Fields{
 		"id": &graphql.Field{
+			Name: "id",
+			Type: graphql.NewNonNull(graphql.String),
+		},
+	},
+	})
+	testBase2PrefixInterface := graphql.NewInterface(graphql.InterfaceConfig{Name: "prefixTestBase2", Fields: graphql.Fields{
+		"id2": &graphql.Field{
 			Name: "id2",
 			Type: graphql.NewNonNull(graphql.String),
 		},
@@ -179,6 +193,20 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 		},
 		Interfaces: []*graphql.Interface{testBaseInterface},
 	})
+	testEmbedPrefixType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "prefixtestembed",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Name: "id",
+				Type: graphql.NewNonNull(graphql.String),
+			},
+			"extra": &graphql.Field{
+				Name: "extra",
+				Type: graphql.NewNonNull(graphql.String),
+			},
+		},
+		Interfaces: []*graphql.Interface{testBasePrefixInterface},
+	})
 	testDoubleEmbedType := graphql.NewObject(graphql.ObjectConfig{
 		Name: "testdoubleembed",
 		Fields: graphql.Fields{
@@ -196,6 +224,24 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 			},
 		},
 		Interfaces: []*graphql.Interface{testBaseInterface, testBase2Interface},
+	})
+	testDoubleEmbedPrefixType := graphql.NewObject(graphql.ObjectConfig{
+		Name: "prefixtestdoubleembed",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Name: "id",
+				Type: graphql.NewNonNull(graphql.String),
+			},
+			"id2": &graphql.Field{
+				Name: "id2",
+				Type: graphql.NewNonNull(graphql.String),
+			},
+			"extra": &graphql.Field{
+				Name: "extra",
+				Type: graphql.NewNonNull(graphql.String),
+			},
+		},
+		Interfaces: []*graphql.Interface{testBasePrefixInterface, testBase2PrefixInterface},
 	})
 	testEmbedType2 := graphql.NewObject(graphql.ObjectConfig{
 		Name: "testembed",
@@ -232,6 +278,7 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 
 	tests := []struct {
 		description    string
+		prefix string
 		structs        []interface{}
 		fieldAdditions map[string][]*graphql.Field
 		want           []graphql.Type
@@ -279,10 +326,16 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 			},
 			want: []graphql.Type{testEmbedType3},
 		},
+		{
+			description: "Mulitple types with prefix",
+			prefix: "prefix",
+			structs:     []interface{}{testEmbed{}, testDoubleEmbed{}},
+			want:        []graphql.Type{testEmbedPrefixType, testDoubleEmbedPrefixType},
+		},
 	}
 
 	for _, test := range tests {
-		ob := NewObjectBuilder(test.structs, test.fieldAdditions)
+		ob := NewObjectBuilder(test.structs, test.prefix, test.fieldAdditions)
 
 		gotTypes := ob.BuildTypes()
 
@@ -328,7 +381,7 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 }
 
 func TestFieldGraphQLType(t *testing.T) {
-	ob := NewObjectBuilder(nil, nil)
+	ob := NewObjectBuilder(nil, "", nil)
 
 	tests := []struct {
 		description  string
@@ -430,7 +483,7 @@ func TestFindObjectField(t *testing.T) {
 }
 
 func TestGraphQLType(t *testing.T) {
-	ob := NewObjectBuilder(nil, nil)
+	ob := NewObjectBuilder(nil, "", nil)
 
 	tests := []struct {
 		description string
