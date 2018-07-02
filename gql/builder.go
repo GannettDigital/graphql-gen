@@ -62,10 +62,14 @@ type ObjectBuilder struct {
 	interfaces      map[string]*graphql.Interface
 	interfaceFields map[string]graphql.Fields
 	objects         map[string]*graphql.Object
+	prefix          string
 	structs         []interface{}
 }
 
 // NewObjectBuilder creates an ObjectBuilder for the given structs and fieldAdditions.
+//
+// namePrefix is an optional string to prefix the name of each generated type and interface with, it does not
+// affect field names.
 //
 // fieldAdditions allows for adding into GraphQL objects fields which don't show up in the underlying structs.
 // The key to the map is a path for the field parent, this starts with the FieldPathRoot and adds the struct name for
@@ -74,11 +78,11 @@ type ObjectBuilder struct {
 // sitename object which is within the url object at the root.
 // Be aware that these fields are added to all structs that have a matching path, this
 // includes any interfaces build from embeded structs as well.
-func NewObjectBuilder(structs []interface{}, fieldAdditions map[string][]*graphql.Field) *ObjectBuilder {
+func NewObjectBuilder(structs []interface{}, namePrefix string, fieldAdditions map[string][]*graphql.Field) *ObjectBuilder {
 	if fieldAdditions == nil {
 		fieldAdditions = make(map[string][]*graphql.Field)
 	}
-	return &ObjectBuilder{fieldAdditions: fieldAdditions, structs: structs, objects: make(map[string]*graphql.Object)}
+	return &ObjectBuilder{fieldAdditions: fieldAdditions, prefix: namePrefix, structs: structs, objects: make(map[string]*graphql.Object)}
 }
 
 // AddCustomFields configures more custom fields that will be used when building the types. This will overwrite custom
@@ -124,10 +128,11 @@ func (ob *ObjectBuilder) BuildInterfaces() map[string]*graphql.Interface {
 
 	for name, embed := range allEmbeds {
 		sType := reflect.TypeOf(embed)
-		ob.interfaceFields[name] = ob.buildFields(sType, name, nil)
+		iName := ob.prefix + name
+		ob.interfaceFields[name] = ob.buildFields(sType, iName, nil)
 
 		ob.interfaces[name] = graphql.NewInterface(graphql.InterfaceConfig{
-			Name:        name,
+			Name:        iName,
 			Fields:      ob.interfaceFields[name],
 			ResolveType: ob.resolveObjectByName,
 		})
@@ -155,27 +160,25 @@ func (ob *ObjectBuilder) BuildTypes() []graphql.Type {
 // sets those embedded structs up as interfaces in GraphQL.
 func (ob *ObjectBuilder) buildType(srcStruct interface{}) graphql.Type {
 	sType := reflect.TypeOf(srcStruct)
+	name := ob.prefix + sType.Name()
+
+	baseFields := make(graphql.Fields)
 	// Find any defined interfaces that are relevant for this struct
 	var gIfaces []*graphql.Interface
 	for name := range extractEmbeds(srcStruct) {
 		if iface, ok := ob.interfaces[name]; ok {
 			gIfaces = append(gIfaces, iface)
 		}
-	}
-
-	if len(gIfaces) == 0 {
-		return ob.buildObject(sType, "", nil, nil)
-	}
-
-	baseFields := make(graphql.Fields)
-	for _, iface := range gIfaces {
-		name := iface.Name()
 		for key, value := range ob.interfaceFields[name] {
 			baseFields[key] = value
 		}
 	}
 
-	object := ob.buildObject(sType, "", gIfaces, baseFields)
+	if len(gIfaces) == 0 {
+		return ob.buildObject(sType, name, nil, nil)
+	}
+
+	object := ob.buildObject(sType, name, gIfaces, baseFields)
 	ob.objects[object.Name()] = object
 	return object
 }
@@ -187,9 +190,6 @@ func (ob *ObjectBuilder) buildType(srcStruct interface{}) graphql.Type {
 // that interface are expected to be provided as the fields for each type that implements an interface must match
 // exactly.
 func (ob *ObjectBuilder) buildObject(sType reflect.Type, name string, gInterfaces []*graphql.Interface, baseFields graphql.Fields) *graphql.Object {
-	if name == "" {
-		name = sType.Name()
-	}
 	name = strings.ToLower(name) // TODO for v2 consider removing this and the similar line in resolveObjectByName
 
 	gfields := ob.buildFields(sType, name, baseFields)
