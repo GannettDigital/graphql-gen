@@ -7,6 +7,8 @@ import (
 
 	"github.com/GannettDigital/graphql"
 	"strings"
+	"encoding/json"
+	"fmt"
 )
 
 // The simple example shows how to use the object builder with a struct with no embeded fields.
@@ -67,7 +69,13 @@ func ExampleObjectBuilder_simple() {
 		RequestString: "",
 	}
 
-	graphql.Do(params)
+	resp := graphql.Do(params)
+	out, err := json.Marshal(resp)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	fmt.Println(out)
 }
 
 // The full example expands on the simple example showing custom fields, GraphQL interfaces and an interface including

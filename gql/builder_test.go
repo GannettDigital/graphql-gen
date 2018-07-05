@@ -2,6 +2,7 @@ package gql
 
 import (
 	"context"
+	"encoding/json"
 	"reflect"
 	"testing"
 	"time"
@@ -107,6 +108,114 @@ func TestAddCustomFields(t *testing.T) {
 	childfields := findObjectField(iface.Fields(), []string{"childa"})
 	if childfields == nil || len(childfields.Fields()) != 2 {
 		t.Errorf("Expeccted interface fields to now equal 2")
+	}
+}
+
+func TestGeneratedSchema(t *testing.T) {
+	simple, err := NewObjectBuilder([]interface{}{testEmbed{}}, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	simpleInterfaces := simple.BuildInterfaces()
+	simpleTypes := simple.BuildTypes()
+
+	prefix, err := NewObjectBuilder([]interface{}{testEmbed{}}, "prefix", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	prefixInterfaces := prefix.BuildInterfaces()
+	prefixTypes := prefix.BuildTypes()
+
+	tests := []struct {
+		description string
+		iface       graphql.Type
+		types       []graphql.Type
+		config      graphql.SchemaConfig
+		query       string
+		want        string
+	}{
+		{
+			description: "Simple query",
+			iface:       simpleInterfaces["TestBase"],
+			types:       simpleTypes,
+			query:       `query { q(id: "1"){ id }}`,
+			want:        `{"data":{"q":{"id":"id"}}}`,
+		},
+		{
+			description: "Interface query",
+			iface:       simpleInterfaces["TestBase"],
+			types:       simpleTypes,
+			query:       `query { q(id: "1"){ id ... on testembed { extra }}}`,
+			want:        `{"data":{"q":{"extra":"extra","id":"id"}}}`,
+		},
+		{
+			description: "Simple query, with name prefix",
+			iface:       prefixInterfaces["TestBase"],
+			types:       prefixTypes,
+			query:       `query { q(id: "1"){ id }}`,
+			want:        `{"data":{"q":{"id":"id"}}}`,
+		},
+		{
+			description: "Interface query, with name prefix",
+			iface:       prefixInterfaces["TestBase"],
+			types:       prefixTypes,
+			query:       `query { q(id: "1"){ id ... on prefixtestembed { extra }}}`,
+			want:        `{"data":{"q":{"extra":"extra","id":"id"}}}`,
+		},
+	}
+
+	for _, test := range tests {
+		queryCfg := graphql.ObjectConfig{
+			Name: "Query",
+			Fields: graphql.Fields{
+				"q": &graphql.Field{
+					Type: test.iface,
+					Args: graphql.FieldConfigArgument{
+						"id": &graphql.ArgumentConfig{
+							Description: "ID of the object to retrieve",
+							Type:        graphql.NewNonNull(graphql.String),
+						},
+					},
+					Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+						return testEmbed{
+							TestBase: TestBase{Id: "id"},
+							Extra:    "extra",
+						}, nil
+					},
+				},
+			},
+		}
+		query := graphql.NewObject(queryCfg)
+		config := graphql.SchemaConfig{
+			Query: query,
+			Types: test.types,
+		}
+
+		s, err := graphql.NewSchema(config)
+		if err != nil {
+			t.Errorf("Test %q - failed to initialize schema", test.description)
+			continue
+		}
+
+		params := graphql.Params{
+			Context:       context.Background(),
+			Schema:        s,
+			RequestString: test.query,
+		}
+
+		resp := graphql.Do(params)
+		if len(resp.Errors) != 0 {
+			t.Errorf("Test %q - query failed: %v", test.description, resp.Errors)
+		}
+
+		got, err := json.Marshal(resp)
+		if err != nil {
+			t.Errorf("Test %q - failed to Marshal: %v", test.description, err)
+		}
+
+		if string(got) != test.want {
+			t.Errorf("Test %q - got response %q, want %q", test.description, got, test.want)
+		}
 	}
 }
 
@@ -281,7 +390,7 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 
 	tests := []struct {
 		description    string
-		prefix string
+		prefix         string
 		structs        []interface{}
 		fieldAdditions map[string][]*graphql.Field
 		want           []graphql.Type
@@ -331,7 +440,7 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 		},
 		{
 			description: "Mulitple types with prefix",
-			prefix: "prefix",
+			prefix:      "prefix",
 			structs:     []interface{}{testEmbed{}, testDoubleEmbed{}},
 			want:        []graphql.Type{testEmbedPrefixType, testDoubleEmbedPrefixType},
 		},
