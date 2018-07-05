@@ -20,7 +20,10 @@ func ExampleObjectBuilder_simple() {
 
 	exampleData := make(map[string]exampleStruct)
 
-	ob := NewObjectBuilder([]interface{}{exampleStruct{}}, "", nil)
+	ob, err := NewObjectBuilder([]interface{}{exampleStruct{}}, "", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	types := ob.BuildTypes()
 
 	queryCfg := graphql.ObjectConfig{
@@ -95,7 +98,7 @@ func ExampleObjectBuilder_full() {
 	exampleStructResolver := func(p graphql.ResolveParams) (interface{}, error) {
 		id, ok := p.Args["id"].(string)
 		if !ok {
-			return nil, errors.New("failed to extract ID from argument.")
+			return nil, errors.New("failed to extract ID from argument")
 		}
 		// replace with DB implementation
 		if example, ok := exampleData2[id]; ok {
@@ -105,7 +108,10 @@ func ExampleObjectBuilder_full() {
 		example := exampleData3[id]
 		return example, nil
 	}
-	ob := NewObjectBuilder([]interface{}{exampleStruct2{}, exampleStruct3{}}, "", nil)
+	ob, err := NewObjectBuilder([]interface{}{exampleStruct2{}, exampleStruct3{}}, "", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// First create the interface so the interface can be used in adding a custom field
 	ifaces := ob.BuildInterfaces()
@@ -113,7 +119,7 @@ func ExampleObjectBuilder_full() {
 
 	// This add a new field in the ExampleStruct interface that allows resolving additional structs recursively.
 	ob.AddCustomFields(map[string][]*graphql.Field{
-		strings.Join([]string{"ExampleStruct", "links"}, FieldPathSeperator): {
+		strings.Join([]string{"ExampleStruct", "links"}, FieldPathSeparator): {
 			{
 				Name:    "examplestruct",
 				Type:    exampleInterface,
@@ -169,12 +175,18 @@ func ExampleObjectBuilder_prefix() {
 
 	exampleData := make(map[string]exampleStruct)
 
-	ob := NewObjectBuilder([]interface{}{exampleStruct{}}, "", nil)
+	ob, err := NewObjectBuilder([]interface{}{exampleStruct{}}, "", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	types := ob.BuildTypes()
 
 	// A second object builder adds a prefix to the naming. This example is a contrived but should demonstrate how
 	// naming collisions in the GraphQL schema are avoided by adding the prefix.
-	sob := NewObjectBuilder([]interface{}{exampleStruct{}}, "staging", nil)
+	sob, err := NewObjectBuilder([]interface{}{exampleStruct{}}, "staging", nil)
+	if err != nil {
+		log.Fatal(err)
+	}
 	stypes := sob.BuildTypes()
 
 	queryCfg := graphql.ObjectConfig{

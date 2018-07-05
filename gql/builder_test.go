@@ -134,7 +134,10 @@ func TestObjectBuilder_BuildInterfaces(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ob := NewObjectBuilder(test.structs, "", nil)
+		ob, err := NewObjectBuilder(test.structs, "", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		got := ob.BuildInterfaces()
 
@@ -335,7 +338,10 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		ob := NewObjectBuilder(test.structs, test.prefix, test.fieldAdditions)
+		ob, err := NewObjectBuilder(test.structs, test.prefix, test.fieldAdditions)
+		if err != nil {
+			t.Fatal(err)
+		}
 
 		gotTypes := ob.BuildTypes()
 
@@ -381,7 +387,10 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 }
 
 func TestFieldGraphQLType(t *testing.T) {
-	ob := NewObjectBuilder(nil, "", nil)
+	ob, err := NewObjectBuilder(nil, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		description  string
@@ -483,7 +492,10 @@ func TestFindObjectField(t *testing.T) {
 }
 
 func TestGraphQLType(t *testing.T) {
-	ob := NewObjectBuilder(nil, "", nil)
+	ob, err := NewObjectBuilder(nil, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	tests := []struct {
 		description string

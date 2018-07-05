@@ -17,7 +17,7 @@ import (
 
 const (
 	FieldPathRoot      = ""
-	FieldPathSeperator = "_"
+	FieldPathSeparator = "_"
 	// because _ is the only allowed non-alphanumeric character
 	// http://facebook.github.io/graphql/October2016/#sec-Names
 	// any _ occurances will be gracefully removed e.g. _my_odd_name => myoddname
@@ -68,21 +68,24 @@ type ObjectBuilder struct {
 
 // NewObjectBuilder creates an ObjectBuilder for the given structs and fieldAdditions.
 //
-// namePrefix is an optional string to prefix the name of each generated type and interface with, it does not
-// affect field names.
+// namePrefix is an optional string to prefix the name of each generated type and interface with, it becomes part of the
+// parent name of a field name but otherwise does not affect field names.
 //
 // fieldAdditions allows for adding into GraphQL objects fields which don't show up in the underlying structs.
 // The key to the map is a path for the field parent, this starts with the FieldPathRoot and adds the struct name for
-// any embedded structs joined with FieldPathSeperator. Each nested object within the GraphQL object has its own
-// path name. For example `fmt.Sprintf("%surl%ssitename", FieldPathRoot, FieldPathSeperator)` for fields added to the
+// any embedded structs joined with FieldPathSeparator. Each nested object within the GraphQL object has its own
+// path name. For example `fmt.Sprintf("%surl%ssitename", FieldPathRoot, FieldPathSeparator)` for fields added to the
 // sitename object which is within the url object at the root.
 // Be aware that these fields are added to all structs that have a matching path, this
 // includes any interfaces build from embeded structs as well.
-func NewObjectBuilder(structs []interface{}, namePrefix string, fieldAdditions map[string][]*graphql.Field) *ObjectBuilder {
+func NewObjectBuilder(structs []interface{}, namePrefix string, fieldAdditions map[string][]*graphql.Field) (*ObjectBuilder, error) {
+	if strings.Contains(namePrefix, FieldPathSeparator) {
+		return nil, fmt.Errorf("namePrefix can not include the FieldPathSeparator %q", FieldPathSeparator)
+	}
 	if fieldAdditions == nil {
 		fieldAdditions = make(map[string][]*graphql.Field)
 	}
-	return &ObjectBuilder{fieldAdditions: fieldAdditions, prefix: namePrefix, structs: structs, objects: make(map[string]*graphql.Object)}
+	return &ObjectBuilder{fieldAdditions: fieldAdditions, prefix: namePrefix, structs: structs, objects: make(map[string]*graphql.Object)}, nil
 }
 
 // AddCustomFields configures more custom fields that will be used when building the types. This will overwrite custom
@@ -93,7 +96,7 @@ func (ob *ObjectBuilder) AddCustomFields(fieldAdditions map[string][]*graphql.Fi
 	for key, fields := range fieldAdditions {
 		ob.fieldAdditions[key] = fields
 
-		splits := strings.Split(key, FieldPathSeperator)
+		splits := strings.Split(key, FieldPathSeparator)
 		ifaceName := splits[0]
 		if iface, ok := ob.interfaces[ifaceName]; ok {
 			parent := findObjectField(iface.Fields(), splits[1:])

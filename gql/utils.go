@@ -98,6 +98,6 @@ func fieldName(field reflect.StructField) string {
 
 // fullFieldName returns the name of the field with its parent name included.
 func fullFieldName(name, parent string) string {
-	return strings.Join([]string{parent, name}, FieldPathSeperator)
+	return strings.Join([]string{parent, name}, FieldPathSeparator)
 }
 
