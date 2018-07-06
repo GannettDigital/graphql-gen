@@ -289,9 +289,9 @@ func (ob *ObjectBuilder) graphQLType(rType reflect.Type, name, parent string) gr
 		reflect.Float32: graphql.Float,
 		reflect.Float64: graphql.Float,
 		reflect.Int:     graphql.Int,
+		reflect.Int64:   graphql.Int,
 		reflect.String:  graphql.String,
-		// There are other reflect types like various int types that are not supported as there has been no need
-		// if a struct uses one of these it should result in a schema creation error
+		// Other reflect types can be added as need arises
 	}
 
 	var gtype graphql.Type

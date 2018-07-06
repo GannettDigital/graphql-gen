@@ -622,6 +622,11 @@ func TestGraphQLType(t *testing.T) {
 			want:        graphql.Int,
 		},
 		{
+			description: "scalar int64",
+			sType:       reflect.TypeOf(int64(100)),
+			want:        graphql.Int,
+		},
+		{
 			description: "scalar Float32",
 			sType:       reflect.TypeOf(float32(0.0)),
 			want:        graphql.Float,
