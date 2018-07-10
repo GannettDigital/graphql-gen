@@ -2,16 +2,16 @@ package gql
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
+	"strings"
 
 	"github.com/GannettDigital/graphql"
-	"strings"
-	"encoding/json"
-	"fmt"
 )
 
-// The simple example shows how to use the object builder with a struct with no embeded fields.
+// The simple example shows how to use the object builder with a struct with no embedded fields.
 // The main value of the object builder comes with many structs each with many fields as it greatly minimizes the
 // amount of code needed to setup these scenarios. This example shows the bare minimum additional pieces needed
 // from the graphql-go library to setup a working schema.

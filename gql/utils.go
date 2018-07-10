@@ -43,7 +43,7 @@ func ExtractField(s interface{}, key string) interface{} {
 	return nil
 }
 
-// extractEmbeds will parse a struct looking for embeded struct and it will return a mapping of the names to the
+// extractEmbeds will parse a struct looking for embedded struct and it will return a mapping of the names to the
 // interface{} of any that are found
 func extractEmbeds(parent interface{}) map[string]interface{} {
 	sType := reflect.TypeOf(parent)
@@ -93,11 +93,10 @@ func fieldName(field reflect.StructField) string {
 		}
 	}
 
-	return strings.ToLower(strings.Replace(field.Name, "_", "",-1))
+	return strings.ToLower(strings.Replace(field.Name, "_", "", -1))
 }
 
 // fullFieldName returns the name of the field with its parent name included.
 func fullFieldName(name, parent string) string {
 	return strings.Join([]string{parent, name}, FieldPathSeparator)
 }
-
