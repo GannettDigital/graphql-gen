@@ -16,11 +16,12 @@ import (
 )
 
 const (
-	FieldPathRoot      = ""
-	FieldPathSeparator = "_"
-	// because _ is the only allowed non-alphanumeric character
+	// FieldPathSeparator is '_' because it is the only allowed non-alphanumeric character.
 	// http://facebook.github.io/graphql/October2016/#sec-Names
-	// any _ occurances will be gracefully removed e.g. _my_odd_name => myoddname
+	// Any _ occurences will be gracefully removed e.g. _my_odd_name => myoddname
+	FieldPathSeparator = "_"
+
+	// QueryReporterContextKey is the key used with context.WithValue to locate the QueryReporter.
 	QueryReporterContextKey = "GraphQLQueryReporter"
 )
 
@@ -77,7 +78,7 @@ type ObjectBuilder struct {
 // path name. For example `fmt.Sprintf("%surl%ssitename", FieldPathRoot, FieldPathSeparator)` for fields added to the
 // sitename object which is within the url object at the root.
 // Be aware that these fields are added to all structs that have a matching path, this
-// includes any interfaces build from embeded structs as well.
+// includes any interfaces build from embedded structs as well.
 func NewObjectBuilder(structs []interface{}, namePrefix string, fieldAdditions map[string][]*graphql.Field) (*ObjectBuilder, error) {
 	if strings.Contains(namePrefix, FieldPathSeparator) {
 		return nil, fmt.Errorf("namePrefix can not include the FieldPathSeparator %q", FieldPathSeparator)

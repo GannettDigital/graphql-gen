@@ -192,7 +192,7 @@ func TestFieldName(t *testing.T) {
 		},
 		{
 			description: "Field contains internal building delimiter char `_`",
-			field:       reflect.StructField{Name: "__name",},
+			field:       reflect.StructField{Name: "__name"},
 			want:        "name",
 		},
 		{

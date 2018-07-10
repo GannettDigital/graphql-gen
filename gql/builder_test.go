@@ -401,7 +401,7 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 			want:        []graphql.Type{testEmbedType},
 		},
 		{
-			description: "Mulitple types",
+			description: "Multiple types",
 			structs:     []interface{}{testEmbed{}, testDoubleEmbed{}},
 			want:        []graphql.Type{testEmbedType, testDoubleEmbedType},
 		},
@@ -439,7 +439,7 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 			want: []graphql.Type{testEmbedType3},
 		},
 		{
-			description: "Mulitple types with prefix",
+			description: "Multiple types with prefix",
 			prefix:      "prefix",
 			structs:     []interface{}{testEmbed{}, testDoubleEmbed{}},
 			want:        []graphql.Type{testEmbedPrefixType, testDoubleEmbedPrefixType},
