@@ -12,9 +12,4 @@ https://github.com/graphql-go/graphql
 For details in using this tooling see the documentation and examples in the [Go docs](http://godoc.org/github.com/GannettDigital/graphql-gen)
 
 ## Building/Testing
-This project uses the Go package management tool [Dep](https://github.com/golang/dep) for dependencies.
-To leverage this tool to install dependencies, run the following command from the project root:
-
-    dep ensure
-
-Testing is done using standard go tooling, ie `go test ./...`
+Build and Testing are done using standard go tooling, ie `go test ./...`
