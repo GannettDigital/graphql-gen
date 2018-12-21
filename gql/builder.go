@@ -240,9 +240,10 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 
 		name := fieldName(field)
 		gfields[name] = &graphql.Field{
-			Name:    name,
-			Type:    gtype,
-			Resolve: ResolveByField(name, parent),
+			Name:        name,
+			Type:        gtype,
+			Resolve:     ResolveByField(name, parent),
+			Description: field.Tag.Get("description"),
 		}
 	}
 	if fields, ok := ob.fieldAdditions[parent]; ok {
