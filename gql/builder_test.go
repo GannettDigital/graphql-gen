@@ -43,7 +43,7 @@ type testUnexported struct {
 type testEmbed struct {
 	TestBase
 
-	Extra string
+	Extra string `description:"not needed, extra"`
 }
 
 type testDoubleEmbed struct {
@@ -299,8 +299,9 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 				Type: graphql.NewNonNull(graphql.String),
 			},
 			"extra": &graphql.Field{
-				Name: "extra",
-				Type: graphql.NewNonNull(graphql.String),
+				Name:        "extra",
+				Type:        graphql.NewNonNull(graphql.String),
+				Description: "not needed, extra",
 			},
 		},
 		Interfaces: []*graphql.Interface{testBaseInterface},
@@ -313,8 +314,9 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 				Type: graphql.NewNonNull(graphql.String),
 			},
 			"extra": &graphql.Field{
-				Name: "extra",
-				Type: graphql.NewNonNull(graphql.String),
+				Name:        "extra",
+				Type:        graphql.NewNonNull(graphql.String),
+				Description: "not needed, extra",
 			},
 		},
 		Interfaces: []*graphql.Interface{testBasePrefixInterface},
@@ -363,8 +365,9 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 				Type: graphql.NewNonNull(graphql.String),
 			},
 			"extra": &graphql.Field{
-				Name: "extra",
-				Type: graphql.NewNonNull(graphql.String),
+				Name:        "extra",
+				Type:        graphql.NewNonNull(graphql.String),
+				Description: "not needed, extra",
 			},
 			"extraid": &graphql.Field{
 				Name: "extraid",
@@ -381,8 +384,9 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 				Type: graphql.Int,
 			},
 			"extra": &graphql.Field{
-				Name: "extra",
-				Type: graphql.NewNonNull(graphql.String),
+				Name:        "extra",
+				Type:        graphql.NewNonNull(graphql.String),
+				Description: "not needed, extra",
 			},
 		},
 		Interfaces: []*graphql.Interface{testBaseInterface},
@@ -489,6 +493,9 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 				}
 				if gotf.Type.String() != wantf.Type.String() {
 					t.Errorf("Test %q - field %q got type %q want %q", test.description, key, gotf.Type, wantf.Type)
+				}
+				if gotf.Description != wantf.Description {
+					t.Errorf("Test %q - field %q got description %q want %q", test.description, key, gotf.Name, wantf.Name)
 				}
 			}
 		}
