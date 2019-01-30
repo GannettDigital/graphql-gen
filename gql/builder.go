@@ -23,7 +23,18 @@ const (
 
 	// QueryReporterContextKey is the key used with context.WithValue to locate the QueryReporter.
 	QueryReporterContextKey = "GraphQLQueryReporter"
+
+	filterArgumentName = "filter"
 )
+
+var graphqlKinds = map[reflect.Kind]graphql.Type{
+	reflect.Bool:    graphql.Boolean,
+	reflect.Float32: graphql.Float,
+	reflect.Float64: graphql.Float,
+	reflect.Int:     graphql.Int,
+	reflect.Int64:   graphql.Int,
+	reflect.String:  graphql.String,
+}
 
 // QueryReporter defines the interface used to report details on the GraphQL queries being performed.
 // Implementations must be concurrency safe and added to the request context using QueryReporterContextKey as the
@@ -49,7 +60,8 @@ type QueryReporter interface {
 // resolve function (ResolveByField) is setup for auto-generated fields. This resolve function assumes that the resolve
 // function used for the Query retrieved an entire object matching the given struct and the resolve for fields is
 // simply to pull the correct field from that object. The default resolve function also looks for a QueryReporter in
-// the context and if it exists reports the QueriedFields.
+// the context and if it exists reports the QueriedFields. If the field is a List the default function is
+// ResolveListField which works the same way but adds a filter parameter optionally used to filter the list items.
 //
 // It is also possible to specify custom fields which can be setup with custom resolve functions. See fieldAdditions on
 // the NewObjectBulider function and the AddCustomFields method.
@@ -239,12 +251,27 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 		}
 
 		name := fieldName(field)
-		gfields[name] = &graphql.Field{
+		f := &graphql.Field{
 			Name:        name,
 			Type:        gtype,
 			Resolve:     ResolveByField(name, parent),
 			Description: field.Tag.Get("description"),
 		}
+		checkType := gtype
+		if nn, ok := gtype.(*graphql.NonNull); ok {
+			checkType = nn.OfType
+		}
+		if _, ok := checkType.(*graphql.List); ok {
+			f.Args = graphql.FieldConfigArgument{
+				filterArgumentName: &graphql.ArgumentConfig{
+					Description: "A List Filter expression such as `{Field: \"position\", Operation: \"<=\", Argument: {Value: 10}}`",
+					Type:        graphqlListFilter,
+				},
+			}
+			f.Resolve = ResolveListField(name, parent)
+		}
+
+		gfields[name] = f
 	}
 	if fields, ok := ob.fieldAdditions[parent]; ok {
 		for _, field := range fields {
@@ -286,16 +313,6 @@ func (ob *ObjectBuilder) fieldGraphQLType(field reflect.StructField, parent stri
 // when considering the entire chain. To make this work when buildObject is called from this function a new name
 // derived from the parent name and the name of this type is passed as an argument.
 func (ob *ObjectBuilder) graphQLType(rType reflect.Type, name, parent string) graphql.Type {
-	graphqlKinds := map[reflect.Kind]graphql.Type{
-		reflect.Bool:    graphql.Boolean,
-		reflect.Float32: graphql.Float,
-		reflect.Float64: graphql.Float,
-		reflect.Int:     graphql.Int,
-		reflect.Int64:   graphql.Int,
-		reflect.String:  graphql.String,
-		// Other reflect types can be added as need arises
-	}
-
 	var gtype graphql.Type
 	kind := rType.Kind()
 	switch kind {
@@ -323,6 +340,58 @@ func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graph
 	name := sType.Name()
 	name = ob.prefix + strings.ToLower(name) // TODO for v2 consider removing this and the similar line in buildObject
 	return ob.objects[name]
+}
+
+// ResolveListField returns a FieldResolveFn that leverages ResolveByField to get the field value then applies an
+// optional filter to the returned list of results.
+//
+// The optional filter is specified by a 'filter' argument which is a JSON object with a required string field
+// named 'Operation' and optional object field 'Argument' and string field named 'Field'. Certain operations may
+// require a valid 'Field' and/or 'Argument'. When provided 'Argument' should be a JSON object whose value will be
+// the argument to NewListOperation functions.
+//
+// Example:
+//  {
+//    query(id: "blah") {
+//      modules(filter: {Field: "moduleName", Operation: "==", Argument: {Value: "foo"}}) {
+//        moduleName
+//      }
+//    }
+//  }
+//
+func ResolveListField(name string, parent string) graphql.FieldResolveFn {
+	return func(p graphql.ResolveParams) (interface{}, error) {
+		filter, err := newListFilter(p.Args[filterArgumentName])
+		if err != nil {
+			return nil, err
+		}
+
+		resolve := ResolveByField(name, parent)
+
+		resolvedValue, err := resolve(p)
+		if err != nil {
+			return nil, err
+		}
+
+		if filter == nil {
+			return resolvedValue, nil
+		}
+
+		value := reflect.ValueOf(resolvedValue)
+		if value.Kind() != reflect.Slice {
+			return nil, fmt.Errorf("value returned from field %q is not a list, unable to filter", fullFieldName(name, parent))
+		}
+
+		var newList []interface{}
+		for i := 0; i < value.Len(); i++ {
+			item := value.Index(i).Interface()
+			if filter.match(item) {
+				newList = append(newList, item)
+			}
+		}
+
+		return newList, nil
+	}
 }
 
 // ResolveByField returns a FieldResolveFn that leverages ExtractFields for the given field name to
