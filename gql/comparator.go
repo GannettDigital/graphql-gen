@@ -160,7 +160,13 @@ type integerComparator struct {
 func (c integerComparator) Match(raw interface{}) bool {
 	in, ok := raw.(int)
 	if !ok {
-		return false
+		rawfloat, ok := raw.(float64)
+		if !ok {
+			return false
+		}
+		in = int(rawfloat)
+		// This covers the case where the underlying field is a float but the comparison in the filter in an int
+		// this can happen because the distinction between float and int is not strong in the JSON
 	}
 	switch c.operation {
 	case ">":

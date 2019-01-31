@@ -13,17 +13,18 @@ import (
 // ensure the parsing code matches up with what will happen when it runs.
 func TestResolveListField(t *testing.T) {
 	type item struct {
-		Name  string
-		Value int
+		Name       string
+		Value      int
+		FloatValue float64
 	}
 	type testStruct struct {
 		Items []item
 	}
 	fullList := []item{
-		{Name: "a", Value: 1},
-		{Name: "b", Value: 2},
-		{Name: "c", Value: 3},
-		{Name: "d", Value: 4},
+		{Name: "a", Value: 1, FloatValue: 1.1},
+		{Name: "b", Value: 2, FloatValue: 1.2},
+		{Name: "c", Value: 3, FloatValue: 2.1},
+		{Name: "d", Value: 4, FloatValue: 2.2},
 	}
 	testData := testStruct{Items: fullList}
 
@@ -134,6 +135,11 @@ func TestResolveListField(t *testing.T) {
 			description: "NOT IN filter",
 			query:       `query { q(id: "1"){ items(filter: {Field: "name", Operation: "NOT IN", Argument: {Values: ["c", "d"]}}){name value}}}`,
 			want:        `{"data":{"q":{"items":[{"name":"a","value":1},{"name":"b","value":2}]}}}`,
+		},
+		{
+			description: "int < filter, float64 field but int value",
+			query:       `query { q(id: "1"){ items(filter: {Field: "floatvalue", Operation: "<", Argument: {Value: 2}}){name value floatvalue}}}`,
+			want:        `{"data":{"q":{"items":[{"floatvalue":1.1,"name":"a","value":1},{"floatvalue":1.2,"name":"b","value":2}]}}}`,
 		},
 	}
 
