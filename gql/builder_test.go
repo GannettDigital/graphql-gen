@@ -46,6 +46,12 @@ type testEmbed struct {
 	Extra string `description:"not needed, extra"`
 }
 
+type testEmbed2 struct {
+	TestBase
+
+	Extra string `description:"DEPRECATED: not needed, extra"`
+}
+
 type testDoubleEmbed struct {
 	TestBase
 	TestBase2
@@ -391,6 +397,21 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 		},
 		Interfaces: []*graphql.Interface{testBaseInterface},
 	})
+	testEmbedType4 := graphql.NewObject(graphql.ObjectConfig{
+		Name: "testembed2",
+		Fields: graphql.Fields{
+			"id": &graphql.Field{
+				Name: "id",
+				Type: graphql.Int,
+			},
+			"extra": &graphql.Field{
+				Name:              "extra",
+				Type:              graphql.NewNonNull(graphql.String),
+				DeprecationReason: "DEPRECATED: not needed, extra",
+			},
+		},
+		Interfaces: []*graphql.Interface{testBaseInterface},
+	})
 
 	tests := []struct {
 		description    string
@@ -441,6 +462,17 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 				}},
 			},
 			want: []graphql.Type{testEmbedType3},
+		},
+		{
+			description: "Custom field overwrites generated field with deprecated reason",
+			structs:     []interface{}{testEmbed2{}},
+			fieldAdditions: map[string][]*graphql.Field{
+				"TestBase": {{
+					Name: "id",
+					Type: graphql.Int,
+				}},
+			},
+			want: []graphql.Type{testEmbedType4},
 		},
 		{
 			description: "Multiple types with prefix",
@@ -495,7 +527,10 @@ func TestObjectBuilder_BuildTypes(t *testing.T) {
 					t.Errorf("Test %q - field %q got type %q want %q", test.description, key, gotf.Type, wantf.Type)
 				}
 				if gotf.Description != wantf.Description {
-					t.Errorf("Test %q - field %q got description %q want %q", test.description, key, gotf.Name, wantf.Name)
+					t.Errorf("Test %q - field %q got description %q want %q", test.description, key, gotf.Description, wantf.Description)
+				}
+				if gotf.DeprecationReason != wantf.DeprecationReason {
+					t.Errorf("Test %q - field %q got deprecation reason %q want %q", test.description, key, gotf.DeprecationReason, wantf.DeprecationReason)
 				}
 			}
 		}

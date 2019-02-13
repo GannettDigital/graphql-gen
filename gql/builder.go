@@ -24,6 +24,7 @@ const (
 	// QueryReporterContextKey is the key used with context.WithValue to locate the QueryReporter.
 	QueryReporterContextKey = "GraphQLQueryReporter"
 
+	deprecationPrefix  = "DEPRECATED:"
 	filterArgumentName = "filter"
 )
 
@@ -228,6 +229,9 @@ func (ob *ObjectBuilder) buildObject(sType reflect.Type, name string, gInterface
 // the name of that object needs to be unique so the parent name is passed to the creation of that object so a
 // unique name is created. The name of the field is unaffected, only the name of the object in the field is changed.
 // This function will panic if called on a non-struct.
+//
+// Fields will have a description set if a description struct tag exists. If this description begins with the
+// deprecationPrefix it will be set as the DeprecationReason instead.
 func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFields graphql.Fields) graphql.Fields {
 	if sType.Kind() != reflect.Struct {
 		// The function should be used on structs defined in the code, panic so misuse is caught in unit testing
@@ -251,12 +255,19 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 		}
 
 		name := fieldName(field)
+		description := field.Tag.Get("description")
 		f := &graphql.Field{
-			Name:        name,
-			Type:        gtype,
-			Resolve:     ResolveByField(name, parent),
-			Description: field.Tag.Get("description"),
+			Name:    name,
+			Type:    gtype,
+			Resolve: ResolveByField(name, parent),
 		}
+
+		if strings.HasPrefix(description, deprecationPrefix) {
+			f.DeprecationReason = description
+		} else {
+			f.Description = description
+		}
+
 		checkType := gtype
 		if nn, ok := gtype.(*graphql.NonNull); ok {
 			checkType = nn.OfType
