@@ -12,16 +12,20 @@ import (
 // The test builds up an entire GraphQL schema to utilize the filter argument parsing done by the GraphQL library and
 // ensure the parsing code matches up with what will happen when it runs.
 func TestResolveListField(t *testing.T) {
+	type leaf struct {
+		Name string
+	}
 	type item struct {
 		Name       string
 		Value      int
 		FloatValue float64
+		Leaf       leaf
 	}
 	type testStruct struct {
 		Items []item
 	}
 	fullList := []item{
-		{Name: "a", Value: 1, FloatValue: 1.1},
+		{Name: "a", Value: 1, FloatValue: 1.1, Leaf: leaf{Name: "leaf"}},
 		{Name: "b", Value: 2, FloatValue: 1.2},
 		{Name: "c", Value: 3, FloatValue: 2.1},
 		{Name: "d", Value: 4, FloatValue: 2.2},
@@ -122,6 +126,11 @@ func TestResolveListField(t *testing.T) {
 			want:        `{"data":{"q":{"items":[]}}}`,
 		},
 		{
+			description: "string equal filter - field not found",
+			query:       `query { q(id: "1"){ items(filter: {Field: "notaname", Operation: "==", Argument: {Value: "z"}}){name value}}}`,
+			want:        `{"data":{"q":{"items":[]}}}`,
+		},
+		{
 			description: "int equal filter",
 			query:       `query { q(id: "1"){ items(filter: {Field: "value", Operation: "==", Argument: {Value: 1}}){name value}}}`,
 			want:        `{"data":{"q":{"items":[{"name":"a","value":1}]}}}`,
@@ -140,6 +149,26 @@ func TestResolveListField(t *testing.T) {
 			description: "int < filter, float64 field but int value",
 			query:       `query { q(id: "1"){ items(filter: {Field: "floatvalue", Operation: "<", Argument: {Value: 2}}){name value floatvalue}}}`,
 			want:        `{"data":{"q":{"items":[{"floatvalue":1.1,"name":"a","value":1},{"floatvalue":1.2,"name":"b","value":2}]}}}`,
+		},
+		{
+			description: "2nd level, string equal filter",
+			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_name", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
+			want:        `{"data":{"q":{"items":[{"leaf":{"name":"leaf"},"name":"a","value":1}]}}}`,
+		},
+		{
+			description: "2nd level, string equal filter - no match",
+			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_name", Operation: "==", Argument: {Value: "z"}}){name value leaf{ name }}}}`,
+			want:        `{"data":{"q":{"items":[]}}}`,
+		},
+		{
+			description: "2ndlevel, string equal filter - first field not found",
+			query:       `query { q(id: "1"){ items(filter: {Field: "child_name", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
+			want:        `{"data":{"q":{"items":[]}}}`,
+		},
+		{
+			description: "2ndlevel, string equal filter - second field not found",
+			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_falsename", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
+			want:        `{"data":{"q":{"items":[]}}}`,
 		},
 	}
 

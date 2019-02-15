@@ -166,6 +166,6 @@ func newListFilter(arg interface{}) (*listFilter, error) {
 }
 
 func (lf listFilter) match(raw interface{}) bool {
-	field := ExtractField(raw, lf.fieldName)
+	field := DeepExtractField(raw, lf.fieldName)
 	return lf.op.Match(field)
 }

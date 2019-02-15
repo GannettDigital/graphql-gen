@@ -359,7 +359,8 @@ func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graph
 // The optional filter is specified by a 'filter' argument which is a JSON object with a required string field
 // named 'Operation' and optional object field 'Argument' and string field named 'Field'. Certain operations may
 // require a valid 'Field' and/or 'Argument'. When provided 'Argument' should be a JSON object whose value will be
-// the argument to NewListOperation functions.
+// the argument to NewListOperation functions. The value of 'Field' is the name of a field in the list items, if
+// the list contains objects within it child field keys can be added using FieldPathSeparator.
 //
 // Example:
 //  {
