@@ -12,57 +12,7 @@ import (
 // The test builds up an entire GraphQL schema to utilize the filter argument parsing done by the GraphQL library and
 // ensure the parsing code matches up with what will happen when it runs.
 func TestResolveListField(t *testing.T) {
-	type leaf struct {
-		Name string
-	}
-	type item struct {
-		Name       string
-		Value      int
-		FloatValue float64
-		Leaf       leaf
-	}
-	type testStruct struct {
-		Items []item
-	}
-	fullList := []item{
-		{Name: "a", Value: 1, FloatValue: 1.1, Leaf: leaf{Name: "leaf"}},
-		{Name: "b", Value: 2, FloatValue: 1.2},
-		{Name: "c", Value: 3, FloatValue: 2.1},
-		{Name: "d", Value: 4, FloatValue: 2.2},
-	}
-	testData := testStruct{Items: fullList}
-
-	ob, err := NewObjectBuilder([]interface{}{testStruct{}}, "", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	types := ob.BuildTypes()
-	queryCfg := graphql.ObjectConfig{
-		Name: "Query",
-		Fields: graphql.Fields{
-			"q": &graphql.Field{
-				Type: types[0],
-				Args: graphql.FieldConfigArgument{
-					"id": &graphql.ArgumentConfig{
-						Description: "ID of the object to retrieve",
-						Type:        graphql.NewNonNull(graphql.String),
-					},
-				},
-				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
-					return testData, nil
-				},
-			},
-		},
-	}
-	query := graphql.NewObject(queryCfg)
-	config := graphql.SchemaConfig{
-		Query: query,
-		Types: types,
-	}
-	s, err := graphql.NewSchema(config)
-	if err != nil {
-		t.Fatal(err)
-	}
+	s := testSchema(t)
 
 	tests := []struct {
 		description string
@@ -73,7 +23,7 @@ func TestResolveListField(t *testing.T) {
 		{
 			description: "No filter argument",
 			query:       `query { q(id: "1"){ items{name value}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"a","value":1},{"name":"b","value":2},{"name":"c","value":3},{"name":"d","value":4}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1},{"name":"d","value":4},{"name":"b","value":2}]}}}`,
 		},
 		{
 			description: "invalid filter",
@@ -138,7 +88,7 @@ func TestResolveListField(t *testing.T) {
 		{
 			description: "limitLength filter",
 			query:       `query { q(id: "1"){ items(filter: {Operation: "LIMIT", Argument: {Value: 2}}){name value}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"a","value":1},{"name":"b","value":2}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1}]}}}`,
 		},
 		{
 			description: "NOT IN filter",
@@ -152,8 +102,8 @@ func TestResolveListField(t *testing.T) {
 		},
 		{
 			description: "2nd level, string equal filter",
-			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_name", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
-			want:        `{"data":{"q":{"items":[{"leaf":{"name":"leaf"},"name":"a","value":1}]}}}`,
+			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_name", Operation: "==", Argument: {Value: "leafA"}}){name value leaf{ name }}}}`,
+			want:        `{"data":{"q":{"items":[{"leaf":{"name":"leafA"},"name":"a","value":1}]}}}`,
 		},
 		{
 			description: "2nd level, string equal filter - no match",
@@ -202,4 +152,70 @@ func TestResolveListField(t *testing.T) {
 			t.Errorf("Test %q - got %v, want %v", test.description, got, want)
 		}
 	}
+}
+
+func testSchema(t *testing.T) graphql.Schema {
+	type leaf struct {
+		Name string
+	}
+	type item struct {
+		Name       string
+		Value      int
+		FloatValue float64
+		Leaf       leaf
+	}
+	type testStruct struct {
+		Items      []item
+		IntList    []int
+		StringList []string
+		FloatList  []float64
+	}
+
+	fullList := []item{
+		{Name: "c", Value: 3, FloatValue: 2.1},
+		{Name: "a", Value: 1, FloatValue: 1.1, Leaf: leaf{Name: "leafA"}},
+		{Name: "d", Value: 4, FloatValue: 2.2},
+		{Name: "b", Value: 2, FloatValue: 1.2, Leaf: leaf{Name: "leafB"}},
+	}
+
+	testData := testStruct{
+		Items:      fullList,
+		IntList:    []int{1, 2, 3, 4},
+		FloatList:  []float64{1.1, 2.2, 3.3, 4.4},
+		StringList: []string{"a", "b", "c", "d"},
+	}
+
+	ob, err := NewObjectBuilder([]interface{}{testStruct{}}, "", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	types := ob.BuildTypes()
+	queryCfg := graphql.ObjectConfig{
+		Name: "Query",
+		Fields: graphql.Fields{
+			"q": &graphql.Field{
+				Type: types[0],
+				Args: graphql.FieldConfigArgument{
+					"id": &graphql.ArgumentConfig{
+						Description: "ID of the object to retrieve",
+						Type:        graphql.NewNonNull(graphql.String),
+					},
+				},
+				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					return testData, nil
+				},
+			},
+		},
+	}
+	query := graphql.NewObject(queryCfg)
+	config := graphql.SchemaConfig{
+		Query: query,
+		Types: types,
+	}
+	s, err := graphql.NewSchema(config)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return s
 }

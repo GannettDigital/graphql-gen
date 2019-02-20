@@ -26,6 +26,7 @@ const (
 
 	deprecationPrefix  = "DEPRECATED:"
 	filterArgumentName = "filter"
+	sortArgumentName   = "sort"
 )
 
 var graphqlKinds = map[reflect.Kind]graphql.Type{
@@ -278,6 +279,10 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 					Description: "A List Filter expression such as `{Field: \"position\", Operation: \"<=\", Argument: {Value: 10}}`",
 					Type:        graphqlListFilter,
 				},
+				sortArgumentName: &graphql.ArgumentConfig{
+					Description: "Sort the list, ie `{Field: \"position\", Order: \"ASC\"}`",
+					Type:        graphqlListFilter,
+				},
 			}
 			f.Resolve = ResolveListField(name, parent)
 		}
@@ -362,10 +367,16 @@ func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graph
 // the argument to NewListOperation functions. The value of 'Field' is the name of a field in the list items, if
 // the list contains objects within it child field keys can be added using FieldPathSeparator.
 //
+// In addition to the filter argument as sort argument can be specified. The sort argument takes a string parameter
+// Field which is the same as that for the filter, the field to be compared or the list itself if unspecified.
+// It also takes an optional order parameter which is either "ASC" or "DESC", "ASC" is default.
+//
+// Sorting occurs before filtering as some filters limit the total returned size of the list.
+//
 // Example:
 //  {
 //    query(id: "blah") {
-//      modules(filter: {Field: "moduleName", Operation: "==", Argument: {Value: "foo"}}) {
+//      modules(filter: {Field: "moduleName", Operation: "==", Argument: {Value: "foo"}}, sort: {Field: "module_type", Order: "ASC"}) {
 //        moduleName
 //      }
 //    }
@@ -378,31 +389,51 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 			return nil, err
 		}
 
+		sortParams, err := parseSortParameters(p.Args[sortArgumentName])
+		if err != nil {
+			return nil, err
+		}
+
 		resolve := ResolveByField(name, parent)
 
 		resolvedValue, err := resolve(p)
 		if err != nil {
 			return nil, err
 		}
-
-		if filter == nil {
+		if filter == nil && sortParams == nil {
+			// an optimization, skip further processing if neither filtering nor sorting is specified
 			return resolvedValue, nil
 		}
 
 		value := reflect.ValueOf(resolvedValue)
 		if value.Kind() != reflect.Slice {
-			return nil, fmt.Errorf("value returned from field %q is not a list, unable to filter", fullFieldName(name, parent))
+			return nil, fmt.Errorf("value returned from field %q is not a list as expected", fullFieldName(name, parent))
 		}
 
-		var newList []interface{}
+		values := make([]interface{}, value.Len())
 		for i := 0; i < value.Len(); i++ {
-			item := value.Index(i).Interface()
-			if filter.match(item) {
-				newList = append(newList, item)
+			values[i] = value.Index(i).Interface()
+		}
+
+		// sort before filter because some filters are based on the count of items
+		if sortParams != nil {
+			if err := listSort(sortParams, values); err != nil {
+				return nil, err
 			}
 		}
 
-		return newList, nil
+		if filter == nil {
+			return values, nil
+		}
+
+		var filtered []interface{}
+		for _, item := range values {
+			if filter.match(item) {
+				filtered = append(filtered, item)
+			}
+		}
+
+		return filtered, nil
 	}
 }
 
