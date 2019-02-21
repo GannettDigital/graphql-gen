@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 
+	"github.com/GannettDigital/graphql"
 	"github.com/GannettDigital/graphql/language/ast"
 )
 
@@ -12,6 +13,14 @@ const (
 	ascending  = "ASC"
 	descending = "DESC"
 )
+
+var graphqlSortFilter = graphql.NewScalar(graphql.ScalarConfig{
+	Name:         "SortFilter",
+	Description:  "A JSON object used for sorting list items, includes optional field 'Field' and 'Order'.",
+	Serialize:    func(value interface{}) interface{} { return nil },
+	ParseValue:   func(value interface{}) interface{} { return nil },
+	ParseLiteral: func(valueAST ast.Value) interface{} { return valueAST.GetValue() },
+})
 
 type lessFunc func(i, j int) bool
 
