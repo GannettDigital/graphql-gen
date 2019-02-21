@@ -281,7 +281,7 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 				},
 				sortArgumentName: &graphql.ArgumentConfig{
 					Description: "Sort the list, ie `{Field: \"position\", Order: \"ASC\"}`",
-					Type:        graphqlListFilter,
+					Type:        graphqlSortFilter,
 				},
 			}
 			f.Resolve = ResolveListField(name, parent)
