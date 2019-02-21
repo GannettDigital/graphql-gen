@@ -5,6 +5,75 @@ import (
 	"testing"
 )
 
+func TestDeepExtractField(t *testing.T) {
+	type struct1 struct {
+		Id   string
+		Base TestBase
+	}
+	type struct2 struct {
+		Id     string
+		Ground struct1
+	}
+
+	tests := []struct {
+		description string
+		st          interface{}
+		key         string
+		want        interface{}
+	}{
+		{
+			description: "Single level, should work just as ExtractField",
+			st:          TestBase{Id: "id"},
+			key:         "id",
+			want:        "id",
+		},
+		{
+			description: "Single level, key not found",
+			st:          TestBase{Id: "id"},
+			key:         "Bogus",
+			want:        nil,
+		},
+		{
+			description: "Single level field in embedded base",
+			st:          testEmbed{TestBase: TestBase{Id: "id"}},
+			key:         "id",
+			want:        "id",
+		},
+		{
+			description: "Two levels",
+			st:          struct1{Id: "wrong", Base: TestBase{Id: "id"}},
+			key:         "base_id",
+			want:        "id",
+		},
+		{
+			description: "Three levels",
+			st:          struct2{Id: "alsowrong", Ground: struct1{Id: "wrong", Base: TestBase{Id: "id"}}},
+			key:         "ground_base_id",
+			want:        "id",
+		},
+		{
+			description: "Three levels, with level 2 not found",
+			st:          struct2{Id: "alsowrong", Ground: struct1{Id: "wrong", Base: TestBase{Id: "id"}}},
+			key:         "ground_offbase_id",
+			want:        nil,
+		},
+		{
+			description: "Three levels, with leaf not found",
+			st:          struct2{Id: "alsowrong", Ground: struct1{Id: "wrong", Base: TestBase{Id: "id"}}},
+			key:         "ground_base_less",
+			want:        nil,
+		},
+	}
+
+	for _, test := range tests {
+		got := DeepExtractField(test.st, test.key)
+
+		if got != test.want {
+			t.Errorf("Test %q - got %v, want %v", test.description, got, test.want)
+		}
+	}
+}
+
 func TestExtractField(t *testing.T) {
 	tests := []struct {
 		description string

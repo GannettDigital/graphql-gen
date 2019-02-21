@@ -5,6 +5,22 @@ import (
 	"strings"
 )
 
+// DeepExtractField utilizes ExtractField multiple times to retrieve the value of a field in a multilevel object.
+// The key is expected to use FieldPathSeparator to distinguish the multiple levels.
+func DeepExtractField(s interface{}, key string) interface{} {
+	splits := strings.Split(key, FieldPathSeparator)
+
+	value := s
+	for _, split := range splits {
+		value = ExtractField(value, split)
+		if value == nil {
+			return nil
+		}
+	}
+
+	return value
+}
+
 // ExtractField returns the value of a field from a struct, the key is the field name, which is matched
 // to the output from the fieldName function. This function also handles searching any root level embedded structs.
 // If the key does not match a field in the struct or the provided interface is not a struct nil is returned.
