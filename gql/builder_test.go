@@ -845,10 +845,14 @@ func TestResolveObjectByName(t *testing.T) {
 	ob := &ObjectBuilder{
 		objects: map[string]*graphql.Object{
 			"objecta": objectA,
+			"childa":  childA,
 		},
 	}
 
 	type ObjectA string
+	type ChildA struct {
+		ObjectA string
+	}
 
 	tests := []struct {
 		description string
@@ -859,6 +863,11 @@ func TestResolveObjectByName(t *testing.T) {
 			description: "found",
 			value:       ObjectA(""),
 			want:        objectA,
+		},
+		{
+			description: "found pointer",
+			value:       &ChildA{},
+			want:        childA,
 		},
 		{
 			description: "not found",

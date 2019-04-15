@@ -353,6 +353,9 @@ func (ob *ObjectBuilder) graphQLType(rType reflect.Type, name, parent string) gr
 // on the name of the struct.
 func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graphql.Object {
 	sType := reflect.TypeOf(p.Value)
+	if rvalue := reflect.ValueOf(p.Value); rvalue.Kind() == reflect.Ptr {
+		sType = reflect.TypeOf(reflect.Indirect(rvalue).Interface())
+	}
 	name := sType.Name()
 	name = ob.prefix + strings.ToLower(name) // TODO for v2 consider removing this and the similar line in buildObject
 	return ob.objects[name]

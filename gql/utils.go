@@ -25,6 +25,9 @@ func DeepExtractField(s interface{}, key string) interface{} {
 // to the output from the fieldName function. This function also handles searching any root level embedded structs.
 // If the key does not match a field in the struct or the provided interface is not a struct nil is returned.
 func ExtractField(s interface{}, key string) interface{} {
+	if rvalue := reflect.ValueOf(s); rvalue.Kind() == reflect.Ptr {
+		s = reflect.Indirect(rvalue).Interface()
+	}
 	sType := reflect.TypeOf(s)
 	if sType.Kind() != reflect.Struct {
 		return nil

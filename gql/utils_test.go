@@ -88,6 +88,12 @@ func TestExtractField(t *testing.T) {
 			want:        "id",
 		},
 		{
+			description: "Basic exposed field, pointer",
+			st:          &TestBase{Id: "id"},
+			key:         "id",
+			want:        "id",
+		},
+		{
 			description: "Basic exposed field, but mismatched case in key",
 			st:          TestBase{Id: "id"},
 			key:         "Id",
@@ -114,6 +120,12 @@ func TestExtractField(t *testing.T) {
 		{
 			description: "field in second embedded base",
 			st:          testDoubleEmbed{TestBase: TestBase{Id: "id"}, TestBase2: TestBase2{Id2: "id2"}},
+			key:         "id2",
+			want:        "id2",
+		},
+		{
+			description: "field in second embedded base with pointer",
+			st:          &testDoubleEmbed{TestBase: TestBase{Id: "id"}, TestBase2: TestBase2{Id2: "id2"}},
 			key:         "id2",
 			want:        "id2",
 		},
