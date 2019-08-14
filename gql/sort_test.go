@@ -21,7 +21,7 @@ func TestListSort(t *testing.T) {
 		{
 			description: "No sort argument",
 			query:       `query { q(id: "1"){ items{name value}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1},{"name":"d","value":4},{"name":"b","value":2}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1},{"name":"d","value":4},{"name":"b","value":2},{"name":"e","value":5}]}}}`,
 		},
 		{
 			description: "invalid sort",
@@ -46,47 +46,47 @@ func TestListSort(t *testing.T) {
 		{
 			description: "string sort ascending",
 			query:       `query { q(id: "1"){ items(sort: {Field: "name", Order: "ASC"}){name}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"},{"name":"e"}]}}}`,
 		},
 		{
 			description: "string sort ascending by default",
 			query:       `query { q(id: "1"){ items(sort: {Field: "name"}){name}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"},{"name":"e"}]}}}`,
 		},
 		{
 			description: "string sort on field not in output, ascending by default",
 			query:       `query { q(id: "1"){ items(sort: {Field: "name"}){value}}}`,
-			want:        `{"data":{"q":{"items":[{"value":1},{"value":2},{"value":3},{"value":4}]}}}`,
+			want:        `{"data":{"q":{"items":[{"value":1},{"value":2},{"value":3},{"value":4},{"value":5}]}}}`,
 		},
 		{
 			description: "string sort descending",
 			query:       `query { q(id: "1"){ items(sort: {Field: "name", Order: "DESC"}){name}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"d"},{"name":"c"},{"name":"b"},{"name":"a"}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"e"},{"name":"d"},{"name":"c"},{"name":"b"},{"name":"a"}]}}}`,
 		},
 		{
 			description: "second level string sort",
 			query:       `query { q(id: "1"){ items(sort: {Field: "leaf_name", Order: "ASC"}){name leaf{name}}}}`,
-			want:        `{"data":{"q":{"items":[{"leaf":{"name":""},"name":"c"},{"leaf":{"name":""},"name":"d"},{"leaf":{"name":"leafA"},"name":"a"},{"leaf":{"name":"leafB"},"name":"b"}]}}}`,
+			want:        `{"data":{"q":{"items":[{"leaf":{"name":""},"name":"c"},{"leaf":{"name":""},"name":"d"},{"leaf":{"name":""},"name":"e"},{"leaf":{"name":"leafA"},"name":"a"},{"leaf":{"name":"leafB"},"name":"b"}]}}}`,
 		},
 		{
 			description: "int sort ascending by default",
 			query:       `query { q(id: "1"){ items(sort: {Field: "value"}){value}}}`,
-			want:        `{"data":{"q":{"items":[{"value":1},{"value":2},{"value":3},{"value":4}]}}}`,
+			want:        `{"data":{"q":{"items":[{"value":1},{"value":2},{"value":3},{"value":4},{"value":5}]}}}`,
 		},
 		{
 			description: "int sort descending",
 			query:       `query { q(id: "1"){ items(sort: {Field: "value", Order: "DESC"}){value}}}`,
-			want:        `{"data":{"q":{"items":[{"value":4},{"value":3},{"value":2},{"value":1}]}}}`,
+			want:        `{"data":{"q":{"items":[{"value":5},{"value":4},{"value":3},{"value":2},{"value":1}]}}}`,
 		},
 		{
 			description: "float64 sort ascending by default",
 			query:       `query { q(id: "1"){ items(sort: {Field: "floatvalue"}){floatvalue}}}`,
-			want:        `{"data":{"q":{"items":[{"floatvalue":1.1},{"floatvalue":1.2},{"floatvalue":2.1},{"floatvalue":2.2}]}}}`,
+			want:        `{"data":{"q":{"items":[{"floatvalue":1.1},{"floatvalue":1.2},{"floatvalue":2.1},{"floatvalue":2.2},{"floatvalue":5.5}]}}}`,
 		},
 		{
 			description: "float64 sort descending",
 			query:       `query { q(id: "1"){ items(sort: {Field: "floatvalue", Order: "DESC"}){floatvalue}}}`,
-			want:        `{"data":{"q":{"items":[{"floatvalue":2.2},{"floatvalue":2.1},{"floatvalue":1.2},{"floatvalue":1.1}]}}}`,
+			want:        `{"data":{"q":{"items":[{"floatvalue":5.5},{"floatvalue":2.2},{"floatvalue":2.1},{"floatvalue":1.2},{"floatvalue":1.1}]}}}`,
 		},
 		{
 			description: "string sort and integer filter",
@@ -137,6 +137,21 @@ func TestListSort(t *testing.T) {
 			description: "int sort and limit filter, no field, ascending",
 			query:       `query { q(id: "1"){ intlist(sort: {Order: "ASC"},filter: {Operation: "LIMIT", Argument:{Value: 2}})}}`,
 			want:        `{"data":{"q":{"intlist":[1,2]}}}`,
+		},
+		{
+			description: "int64 sort, no field, ascending",
+			query:       `query { q(id: "1"){ int64list(sort: {Order: "ASC"})}}`,
+			want:        `{"data":{"q":{"int64list":[11,22,33,44]}}}`,
+		},
+		{
+			description: "int64 sort, no field, descending",
+			query:       `query { q(id: "1"){ int64list(sort: {Order: "DESC"})}}`,
+			want:        `{"data":{"q":{"int64list":[44,33,22,11]}}}`,
+		},
+		{
+			description: "int64 sort and limit filter, no field, ascending",
+			query:       `query { q(id: "1"){ int64list(sort: {Order: "ASC"},filter: {Operation: "LIMIT", Argument:{Value: 2}})}}`,
+			want:        `{"data":{"q":{"int64list":[11,22]}}}`,
 		},
 	}
 
