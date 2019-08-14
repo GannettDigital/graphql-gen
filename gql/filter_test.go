@@ -23,7 +23,7 @@ func TestResolveListField(t *testing.T) {
 		{
 			description: "No filter argument",
 			query:       `query { q(id: "1"){ items{name value}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1},{"name":"d","value":4},{"name":"b","value":2}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1},{"name":"d","value":4},{"name":"b","value":2},{"name":"e","value":5}]}}}`,
 		},
 		{
 			description: "invalid filter",
@@ -93,7 +93,7 @@ func TestResolveListField(t *testing.T) {
 		{
 			description: "NOT IN filter",
 			query:       `query { q(id: "1"){ items(filter: {Field: "name", Operation: "NOT IN", Argument: {Values: ["c", "d"]}}){name value}}}`,
-			want:        `{"data":{"q":{"items":[{"name":"a","value":1},{"name":"b","value":2}]}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"a","value":1},{"name":"b","value":2},{"name":"e","value":5}]}}}`,
 		},
 		{
 			description: "int < filter, float64 field but int value",
@@ -111,12 +111,12 @@ func TestResolveListField(t *testing.T) {
 			want:        `{"data":{"q":{"items":[]}}}`,
 		},
 		{
-			description: "2ndlevel, string equal filter - first field not found",
+			description: "2nd level, string equal filter - first field not found",
 			query:       `query { q(id: "1"){ items(filter: {Field: "child_name", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
 			want:        `{"data":{"q":{"items":[]}}}`,
 		},
 		{
-			description: "2ndlevel, string equal filter - second field not found",
+			description: "2nd level, string equal filter - second field not found",
 			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_falsename", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
 			want:        `{"data":{"q":{"items":[]}}}`,
 		},
@@ -161,12 +161,14 @@ func testSchema(t *testing.T) graphql.Schema {
 	type item struct {
 		Name       string
 		Value      int
+		Value64    int64
 		FloatValue float64
 		Leaf       leaf
 	}
 	type testStruct struct {
 		Items      []item
 		IntList    []int
+		Int64List  []int64
 		StringList []string
 		FloatList  []float64
 	}
@@ -176,11 +178,13 @@ func testSchema(t *testing.T) graphql.Schema {
 		{Name: "a", Value: 1, FloatValue: 1.1, Leaf: leaf{Name: "leafA"}},
 		{Name: "d", Value: 4, FloatValue: 2.2},
 		{Name: "b", Value: 2, FloatValue: 1.2, Leaf: leaf{Name: "leafB"}},
+		{Name: "e", Value: 5, Value64: 55, FloatValue: 5.5},
 	}
 
 	testData := testStruct{
 		Items:      fullList,
 		IntList:    []int{1, 2, 3, 4},
+		Int64List:  []int64{11, 22, 33, 44},
 		FloatList:  []float64{1.1, 2.2, 3.3, 4.4},
 		StringList: []string{"a", "b", "c", "d"},
 	}

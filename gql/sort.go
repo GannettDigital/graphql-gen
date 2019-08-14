@@ -111,6 +111,13 @@ func unprotectedListSort(params *sortParameters, list []interface{}, errChan cha
 
 			return iItem < jItem
 		}
+	case int64:
+		less = func(i, j int) bool {
+			iItem := extracFunc(i).(int64)
+			jItem := extracFunc(j).(int64)
+
+			return iItem < jItem
+		}
 	case string:
 		less = func(i, j int) bool {
 			iItem := extracFunc(i).(string)
