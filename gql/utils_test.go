@@ -66,11 +66,13 @@ func TestDeepExtractField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := DeepExtractField(test.st, test.key)
+		t.Run(test.description, func(t *testing.T) {
+			got := DeepExtractField(test.st, test.key)
 
-		if got != test.want {
-			t.Errorf("Test %q - got %v, want %v", test.description, got, test.want)
-		}
+			if got != test.want {
+				t.Errorf("Got %v, want %v", got, test.want)
+			}
+		})
 	}
 }
 
@@ -126,11 +128,13 @@ func TestExtractField(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := ExtractField(test.st, test.key)
+		t.Run(test.description, func(t *testing.T) {
+			got := ExtractField(test.st, test.key)
 
-		if got != test.want {
-			t.Errorf("Test %q - got %v, want %v", test.description, got, test.want)
-		}
+			if got != test.want {
+				t.Errorf("Got %v, want %v", got, test.want)
+			}
+		})
 	}
 }
 
@@ -168,13 +172,15 @@ func TestExtractEmbeds(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := extractEmbeds(test.in)
-		if test.want == nil && got == nil {
-			continue
-		}
-		if !reflect.DeepEqual(got, test.want) {
-			t.Errorf("Test %q - Got %#v, want %#v", test.description, got, test.want)
-		}
+		t.Run(test.description, func(t *testing.T) {
+			got := extractEmbeds(test.in)
+			if test.want == nil && got == nil {
+				return
+			}
+			if !reflect.DeepEqual(got, test.want) {
+				t.Errorf("Got %#v, want %#v", got, test.want)
+			}
+		})
 	}
 }
 
@@ -212,7 +218,12 @@ func TestFieldName(t *testing.T) {
 		{
 			description: "JSON name is -",
 			field:       reflect.StructField{Name: "name", Tag: reflect.StructTag(`json:"-,"`)},
-			want:        "-",
+			want:        "name",
+		},
+		{
+			description: "JSON name is invalid for GraphQL Schemas",
+			field:       reflect.StructField{Name: "OneToOne", Tag: reflect.StructTag(`json:"1_1,omitempty"`)},
+			want:        "onetoone",
 		},
 		{
 			description: "Name from field name",
@@ -287,10 +298,12 @@ func TestFieldName(t *testing.T) {
 	}
 
 	for _, test := range tests {
-		got := fieldName(test.field)
+		t.Run(test.description, func(t *testing.T) {
+			got := fieldName(test.field)
 
-		if got != test.want {
-			t.Errorf("Test %q - got %q, want %q", test.description, got, test.want)
-		}
+			if got != test.want {
+				t.Errorf("Got %q, want %q", got, test.want)
+			}
+		})
 	}
 }
