@@ -106,8 +106,9 @@ func fieldName(field reflect.StructField) string {
 			// for details on this behavior see https://golang.org/pkg/encoding/json/#Marshal
 			return ""
 		}
+		name = strings.Replace(name, "_", "", -1)
 		if name != "" && nameIsValidGraphQL(name) {
-			return strings.Replace(name, "_", "", -1)
+			return name
 		}
 	}
 

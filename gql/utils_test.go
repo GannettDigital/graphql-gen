@@ -226,6 +226,11 @@ func TestFieldName(t *testing.T) {
 			want:        "onetoone",
 		},
 		{
+			description: "JSON name is invalid for GraphQL Schemas and begins with a _",
+			field:       reflect.StructField{Name: "OneToOne", Tag: reflect.StructTag(`json:"_1_1,omitempty"`)},
+			want:        "onetoone",
+		},
+		{
 			description: "Name from field name",
 			field:       reflect.StructField{Name: "name"},
 			want:        "name",
