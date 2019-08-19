@@ -3,6 +3,8 @@ package gql
 import (
 	"reflect"
 	"strings"
+
+	"github.com/GannettDigital/graphql"
 )
 
 // DeepExtractField utilizes ExtractField multiple times to retrieve the value of a field in a multilevel object.
@@ -104,12 +106,19 @@ func fieldName(field reflect.StructField) string {
 			// for details on this behavior see https://golang.org/pkg/encoding/json/#Marshal
 			return ""
 		}
-		if name != "" {
-			return strings.Replace(name, "_", "", -1)
+		name = strings.Replace(name, "_", "", -1)
+		if name != "" && nameIsValidGraphQL(name) {
+			return name
 		}
 	}
 
 	return strings.ToLower(strings.Replace(field.Name, "_", "", -1))
+}
+
+// nameIsValidGraphQL is used to determine if a name is a valid GraphQL field name
+func nameIsValidGraphQL(name string) bool {
+	match := graphql.NameRegExp.MatchString(name)
+	return match
 }
 
 // fullFieldName returns the name of the field with its parent name included.
