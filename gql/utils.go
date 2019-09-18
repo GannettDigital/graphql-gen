@@ -1,6 +1,7 @@
 package gql
 
 import (
+	"fmt"
 	"reflect"
 	"strings"
 
@@ -9,18 +10,22 @@ import (
 
 // DeepExtractField utilizes ExtractField multiple times to retrieve the value of a field in a multilevel object.
 // The key is expected to use FieldPathSeparator to distinguish the multiple levels.
-func DeepExtractField(s interface{}, key string) interface{} {
+// This will throw an error if the value for the first split cannot be found.
+func DeepExtractField(s interface{}, key string) (interface{}, error) {
 	splits := strings.Split(key, FieldPathSeparator)
 
 	value := s
-	for _, split := range splits {
+	for i, split := range splits {
 		value = ExtractField(value, split)
 		if value == nil {
-			return nil
+			if i == 0 {
+				return nil, fmt.Errorf("unable to find top level field %q", split)
+			}
+			return nil, nil
 		}
 	}
 
-	return value
+	return value, nil
 }
 
 // ExtractField returns the value of a field from a struct, the key is the field name, which is matched

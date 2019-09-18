@@ -223,7 +223,7 @@ func TestListSortFailures(t *testing.T) {
 				testItem{A: []string{"b", "c"}},
 				testItem{A: 2},
 			},
-			errPrefix: "unable to extract",
+			errPrefix: "failed to sort",
 		},
 		{
 			description: "List fields is mix of int and string",

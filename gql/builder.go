@@ -428,7 +428,11 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 
 		var filtered []interface{}
 		for _, item := range values {
-			if filter.match(item) {
+			matched, err := filter.match(item)
+			if err != nil {
+				return nil, err
+			}
+			if matched {
 				filtered = append(filtered, item)
 			}
 		}
