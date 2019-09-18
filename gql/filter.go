@@ -165,7 +165,16 @@ func newListFilter(arg interface{}) (*listFilter, error) {
 	return &listFilter{fieldName: lf.Field, op: op}, nil
 }
 
-func (lf listFilter) match(raw interface{}) bool {
-	field := DeepExtractField(raw, lf.fieldName)
-	return lf.op.Match(field)
+func (lf listFilter) match(raw interface{}) (bool, error) {
+	// In the case  the fieldName is empty, DeepExtractField will always error.
+	// So check for this and don't extract the field but just try to match it to nil.
+	// This comes into play with filters such as limitLength
+	if lf.fieldName == "" {
+		return lf.op.Match(nil), nil
+	}
+	field, err := deepExtractFieldWithError(raw, lf.fieldName)
+	if err != nil {
+		return false, err
+	}
+	return lf.op.Match(field), nil
 }

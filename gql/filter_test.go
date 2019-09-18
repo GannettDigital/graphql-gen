@@ -78,7 +78,7 @@ func TestResolveListField(t *testing.T) {
 		{
 			description: "string equal filter - field not found",
 			query:       `query { q(id: "1"){ items(filter: {Field: "notaname", Operation: "==", Argument: {Value: "z"}}){name value}}}`,
-			want:        `{"data":{"q":{"items":[]}}}`,
+			wantErr:     true,
 		},
 		{
 			description: "int equal filter",
@@ -113,7 +113,7 @@ func TestResolveListField(t *testing.T) {
 		{
 			description: "2nd level, string equal filter - first field not found",
 			query:       `query { q(id: "1"){ items(filter: {Field: "child_name", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
-			want:        `{"data":{"q":{"items":[]}}}`,
+			wantErr:     true,
 		},
 		{
 			description: "2nd level, string equal filter - second field not found",

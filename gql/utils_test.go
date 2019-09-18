@@ -20,6 +20,7 @@ func TestDeepExtractField(t *testing.T) {
 		st          interface{}
 		key         string
 		want        interface{}
+		wantErr     bool
 	}{
 		{
 			description: "Single level, should work just as ExtractField",
@@ -31,7 +32,7 @@ func TestDeepExtractField(t *testing.T) {
 			description: "Single level, key not found",
 			st:          TestBase{Id: "id"},
 			key:         "Bogus",
-			want:        nil,
+			wantErr:     true,
 		},
 		{
 			description: "Single level field in embedded base",
@@ -67,7 +68,11 @@ func TestDeepExtractField(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			got := DeepExtractField(test.st, test.key)
+			got, err := deepExtractFieldWithError(test.st, test.key)
+
+			if (err != nil) != test.wantErr {
+				t.Errorf("Got err %v, want err %v", err, test.wantErr)
+			}
 
 			if got != test.want {
 				t.Errorf("Got %v, want %v", got, test.want)
