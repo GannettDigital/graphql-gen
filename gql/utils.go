@@ -25,7 +25,7 @@ func deepExtractFieldWithError(s interface{}, key string) (interface{}, error) {
 		value = ExtractField(value, split)
 		if value == nil {
 			if i == 0 {
-				return nil, fmt.Errorf("unable to find top level field %q", split)
+				return nil, fmt.Errorf("unable to find field to extract: %q", split)
 			}
 			return nil, nil
 		}

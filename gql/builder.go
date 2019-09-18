@@ -430,7 +430,7 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 		for _, item := range values {
 			matched, err := filter.match(item)
 			if err != nil {
-				return nil, err
+				return nil, fmt.Errorf("%v. Note: filtering and sorting is not available on hydrated items", err)
 			}
 			if matched {
 				filtered = append(filtered, item)
