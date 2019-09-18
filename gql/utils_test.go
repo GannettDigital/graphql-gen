@@ -68,7 +68,7 @@ func TestDeepExtractField(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.description, func(t *testing.T) {
-			got, err := DeepExtractField(test.st, test.key)
+			got, err := deepExtractFieldWithError(test.st, test.key)
 
 			if (err != nil) != test.wantErr {
 				t.Errorf("Got err %v, want err %v", err, test.wantErr)

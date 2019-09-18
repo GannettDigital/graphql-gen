@@ -8,10 +8,16 @@ import (
 	"github.com/GannettDigital/graphql"
 )
 
-// DeepExtractField utilizes ExtractField multiple times to retrieve the value of a field in a multilevel object.
+// DeepExtractField executed the deepExtractFieldWithError method and swallows the error, if any.
+func DeepExtractField(s interface{}, key string) interface{} {
+	value, _ := deepExtractFieldWithError(s, key)
+	return value
+}
+
+// deepExtractFieldWithError utilizes ExtractField multiple times to retrieve the value of a field in a multilevel object.
 // The key is expected to use FieldPathSeparator to distinguish the multiple levels.
 // This will throw an error if the value for the first split cannot be found.
-func DeepExtractField(s interface{}, key string) (interface{}, error) {
+func deepExtractFieldWithError(s interface{}, key string) (interface{}, error) {
 	splits := strings.Split(key, FieldPathSeparator)
 
 	value := s

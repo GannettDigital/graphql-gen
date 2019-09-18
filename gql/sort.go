@@ -94,7 +94,7 @@ func unprotectedListSort(params *sortParameters, list []interface{}, errChan cha
 
 	var less lessFunc
 	extracFunc := func(index int) interface{} {
-		value, err := DeepExtractField(list[index], params.field)
+		value, err := deepExtractFieldWithError(list[index], params.field)
 		if err != nil {
 			panic(err)
 		}
