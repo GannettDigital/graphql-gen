@@ -276,11 +276,11 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 		if _, ok := checkType.(*graphql.List); ok {
 			f.Args = graphql.FieldConfigArgument{
 				filterArgumentName: &graphql.ArgumentConfig{
-					Description: "A List Filter expression such as `{Field: \"position\", Operation: \"<=\", Argument: {Value: 10}}`",
+					Description: `A List Filter expression such as '{Field: "position", Operation: "<=", Argument: {Value: 10}}'`,
 					Type:        graphqlListFilter,
 				},
 				sortArgumentName: &graphql.ArgumentConfig{
-					Description: "Sort the list, ie `{Field: \"position\", Order: \"ASC\"}`",
+					Description: `Sort the list, ie '{Field: "position", Order: "ASC"}'`,
 					Type:        graphqlSortFilter,
 				},
 			}
