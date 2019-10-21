@@ -26,6 +26,32 @@ func TestResolveListField(t *testing.T) {
 			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1},{"name":"d","value":4},{"name":"b","value":2},{"name":"e","value":5}]}}}`,
 		},
 		{
+			description: "Total count",
+			query:       `query { q(id: "1"){ totalItems totalStringlist }}`,
+			want:        `{"data":{"q":{"totalItems":5,"totalStringlist":4}}}`,
+		},
+		{
+			description: "Total count error value is not a list",
+			query:       `query { q(id: "bad-total-count"){ totalItems }}`,
+			want:        `{"data":{"q":{"totalItems":null}},"errors":[{"message":"field value is not a valid list in the data","locations":[{"line":1,"column":35}]}]}`,
+			wantErr:     true,
+		},
+		{
+			description: "Total count nil value is 0 count",
+			query:       `query { q(id: "bad-total-count"){ totalStringlist }}`,
+			want:        `{"data":{"q":{"totalStringlist":0}}}`,
+		},
+		{
+			description: "Total count missing value is 0 count",
+			query:       `query { q(id: "bad-total-count"){ totalIntlist }}`,
+			want:        `{"data":{"q":{"totalIntlist":0}}}`,
+		},
+		{
+			description: "Total items count with count unaffected by filter",
+			query:       `query { q(id: "1"){ totalItems items(filter: {Operation: "LIMIT", Argument: {Value: 2}}){name value} }}`,
+			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1}],"totalItems":5}}}`,
+		},
+		{
 			description: "invalid filter",
 			query:       `query { q(id: "1"){ items(filter: "name == foo"){name value}}}`,
 			wantErr:     true,
@@ -207,6 +233,14 @@ func testSchema(t *testing.T) graphql.Schema {
 					},
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if p.Args["id"] == "bad-total-count" {
+						return struct {
+							Items      string
+							StringList []string
+						}{
+							Items: "some value that isn't an array or a slice",
+						}, nil
+					}
 					return testData, nil
 				},
 			},
