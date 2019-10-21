@@ -31,7 +31,7 @@ func TestResolveListField(t *testing.T) {
 			want:        `{"data":{"q":{"totalItems":5,"totalStringlist":4}}}`,
 		},
 		{
-			description: "Total items count with filter unaffected by filter",
+			description: "Total items count with count unaffected by filter",
 			query:       `query { q(id: "1"){ totalItems items(filter: {Operation: "LIMIT", Argument: {Value: 2}}){name value} }}`,
 			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1}],"totalItems":5}}}`,
 		},
