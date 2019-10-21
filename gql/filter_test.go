@@ -26,6 +26,16 @@ func TestResolveListField(t *testing.T) {
 			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1},{"name":"d","value":4},{"name":"b","value":2},{"name":"e","value":5}]}}}`,
 		},
 		{
+			description: "Total count",
+			query:       `query { q(id: "1"){ totalItems totalStringlist }}`,
+			want:        `{"data":{"q":{"totalItems":5,"totalStringlist":4}}}`,
+		},
+		{
+			description: "Total items count with filter unaffected by filter",
+			query:       `query { q(id: "1"){ totalItems items(filter: {Operation: "LIMIT", Argument: {Value: 2}}){name value} }}`,
+			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1}],"totalItems":5}}}`,
+		},
+		{
 			description: "invalid filter",
 			query:       `query { q(id: "1"){ items(filter: "name == foo"){name value}}}`,
 			wantErr:     true,

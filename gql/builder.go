@@ -285,6 +285,14 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 				},
 			}
 			f.Resolve = ResolveListField(name, parent)
+
+			totalName := "total" + strings.Title(name)
+			gfields[totalName] = &graphql.Field{
+				Name:        totalName,
+				Type:        graphql.Int,
+				Resolve:     ResolveTotalCount(totalName, name, parent),
+				Description: fmt.Sprintf("The total length of the %s list at this same level in the data, this number is unaffected by filtering.", name),
+			}
 		}
 
 		gfields[name] = f
@@ -461,6 +469,34 @@ func ResolveByField(name string, parent string) graphql.FieldResolveFn {
 			)
 		}
 		return field, nil
+	}
+}
+
+// ResolveTotalCount accepts a total count field name, a name of the list field, and a parent name. It leverages
+// ExtractField for the given list field name and will return the count of items in the extract field if it is an array
+// or a slice. It will also report the queried field to the QueryReporter if one is found in the context.
+func ResolveTotalCount(totalFieldName, listFieldName, parent string) graphql.FieldResolveFn {
+	return func(p graphql.ResolveParams) (interface{}, error) {
+		if qr, ok := p.Context.Value(QueryReporterContextKey).(QueryReporter); ok && qr != nil {
+			if err := qr.QueriedField(fullFieldName(totalFieldName, parent)); err != nil {
+				return nil, err
+			}
+		}
+
+		field := ExtractField(p.Source, listFieldName)
+		if field == nil {
+			return 0, nil
+		}
+
+		fieldValue := reflect.ValueOf(field)
+		valueKind := fieldValue.Kind()
+		if valueKind != reflect.Slice && valueKind != reflect.Array {
+			return nil, graphql.NewLocatedError(
+				fmt.Errorf("field value is not a valid list in the data"),
+				graphql.FieldASTsToNodeASTs(p.Info.FieldASTs),
+			)
+		}
+		return fieldValue.Len(), nil
 	}
 }
 
