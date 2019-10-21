@@ -484,12 +484,12 @@ func ResolveTotalCount(totalFieldName, listFieldName, parent string) graphql.Fie
 		}
 
 		field := ExtractField(p.Source, listFieldName)
-		if field == nil {
-			return 0, nil
-		}
-
 		fieldValue := reflect.ValueOf(field)
 		valueKind := fieldValue.Kind()
+		if !fieldValue.IsValid() {
+			// This will happen when the field doesn't exist at all in the resolved interface
+			return 0, nil
+		}
 		if valueKind != reflect.Slice && valueKind != reflect.Array {
 			return nil, graphql.NewLocatedError(
 				fmt.Errorf("field value is not a valid list in the data"),
