@@ -31,6 +31,12 @@ func TestResolveListField(t *testing.T) {
 			want:        `{"data":{"q":{"totalItems":5,"totalStringlist":4}}}`,
 		},
 		{
+			description: "Total count invalid data",
+			query:       `query { q(id: "bad-total-count"){ totalItems }}`,
+			want:        `{"data":{"q":{"totalItems":null}},"errors":[{"message":"field value is not a valid list in the data","locations":[{"line":1,"column":35}]}]}`,
+			wantErr:     true,
+		},
+		{
 			description: "Total items count with count unaffected by filter",
 			query:       `query { q(id: "1"){ totalItems items(filter: {Operation: "LIMIT", Argument: {Value: 2}}){name value} }}`,
 			want:        `{"data":{"q":{"items":[{"name":"c","value":3},{"name":"a","value":1}],"totalItems":5}}}`,
@@ -217,6 +223,11 @@ func testSchema(t *testing.T) graphql.Schema {
 					},
 				},
 				Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+					if p.Args["id"] == "bad-total-count" {
+						return struct {
+							Items int
+						}{Items: 69}, nil
+					}
 					return testData, nil
 				},
 			},
