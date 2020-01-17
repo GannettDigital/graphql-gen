@@ -60,6 +60,12 @@ type testDoubleEmbed struct {
 	Extra string
 }
 
+type testTime struct {
+	TestBase
+
+	Extra time.Time
+}
+
 type testQueryReporter struct {
 	queriedField string
 }
@@ -724,6 +730,8 @@ func TestResolveByField(t *testing.T) {
 	extra := "extra"
 	tb := TestBase{Id: "id"}
 	te := testEmbed{TestBase: tb, Extra: extra}
+	ttZero := testTime{Extra: time.Time{}}
+	ttValid := testTime{Extra: time.Date(2006, 01, 02, 15, 04, 05, 0, time.UTC)}
 
 	tests := []struct {
 		description      string
@@ -753,6 +761,16 @@ func TestResolveByField(t *testing.T) {
 			source:           tb,
 			wantQueriedField: "TestBase_extra",
 			wantErr:          true,
+		},
+		{
+			description: "Simple found test, zero time value",
+			source:      ttZero,
+			want:        nil,
+		},
+		{
+			description: "Simple found test, valid time value",
+			source:      ttValid,
+			want:        time.Date(2006, 01, 02, 15, 04, 05, 0, time.UTC),
 		},
 	}
 

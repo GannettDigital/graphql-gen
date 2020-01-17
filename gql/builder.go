@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/GannettDigital/graphql"
 )
@@ -467,6 +468,11 @@ func ResolveByField(name string, parent string) graphql.FieldResolveFn {
 				fmt.Errorf("failed to extract field %q value from data", name),
 				graphql.FieldASTsToNodeASTs(p.Info.FieldASTs),
 			)
+		}
+		if f, ok := field.(time.Time); ok {
+			if f.IsZero() {
+				return nil, nil
+			}
 		}
 		return field, nil
 	}
