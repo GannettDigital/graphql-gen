@@ -255,13 +255,20 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 		if gtype == nil {
 			continue
 		}
+		
+		checkType := gtype
+		nonNull := false
+		if nn, ok := gtype.(*graphql.NonNull); ok {
+			nonNull = true
+			checkType = nn.OfType
+		}
 
 		name := fieldName(field)
 		description := field.Tag.Get("description")
 		f := &graphql.Field{
 			Name:    name,
 			Type:    gtype,
-			Resolve: ResolveByField(name, parent),
+			Resolve: ResolveByField(name, parent, nonNull),
 		}
 
 		if strings.HasPrefix(description, deprecationPrefix) {
@@ -270,10 +277,6 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 			f.Description = description
 		}
 
-		checkType := gtype
-		if nn, ok := gtype.(*graphql.NonNull); ok {
-			checkType = nn.OfType
-		}
 		if _, ok := checkType.(*graphql.List); ok {
 			f.Args = graphql.FieldConfigArgument{
 				filterArgumentName: &graphql.ArgumentConfig{
@@ -285,7 +288,7 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 					Type:        graphqlSortFilter,
 				},
 			}
-			f.Resolve = ResolveListField(name, parent)
+			f.Resolve = ResolveListField(name, parent, nonNull)
 
 			totalName := "total" + strings.Title(name)
 			gfields[totalName] = &graphql.Field{
@@ -391,7 +394,7 @@ func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graph
 //    }
 //  }
 //
-func ResolveListField(name string, parent string) graphql.FieldResolveFn {
+func ResolveListField(name string, parent string, nonNull bool) graphql.FieldResolveFn {
 	return func(p graphql.ResolveParams) (interface{}, error) {
 		filter, err := newListFilter(p.Args[filterArgumentName])
 		if err != nil {
@@ -403,7 +406,7 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 			return nil, err
 		}
 
-		resolve := ResolveByField(name, parent)
+		resolve := ResolveByField(name, parent, nonNull)
 
 		resolvedValue, err := resolve(p)
 		if err != nil {
@@ -454,7 +457,7 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 // resolve the data. The resolve function assumes the entire object is available in the ResolveParams source.
 // It will also report the queried field to the QueryReporter if one is found in the context.
 // This is default resolve function used by the objectbuilder.
-func ResolveByField(name string, parent string) graphql.FieldResolveFn {
+func ResolveByField(name string, parent string, nonNull bool) graphql.FieldResolveFn {
 	return func(p graphql.ResolveParams) (interface{}, error) {
 		if qr, ok := p.Context.Value(QueryReporterContextKey).(QueryReporter); ok && qr != nil {
 			if err := qr.QueriedField(fullFieldName(name, parent)); err != nil {
@@ -470,7 +473,7 @@ func ResolveByField(name string, parent string) graphql.FieldResolveFn {
 			)
 		}
 		if f, ok := field.(time.Time); ok {
-			if f.IsZero() {
+			if !nonNull && f.IsZero() {
 				return nil, nil
 			}
 		}
