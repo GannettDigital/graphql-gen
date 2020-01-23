@@ -766,7 +766,7 @@ func TestResolveByField(t *testing.T) {
 		{
 			description: "Simple found test, zero time value, nullable",
 			source:      ttZero,
-			want:        nil,
+			want:        time.Time{},
 		},
 		{
 			description: "Simple found test, zero time value, non-nullable",
@@ -780,9 +780,9 @@ func TestResolveByField(t *testing.T) {
 			want:        time.Date(2006, 01, 02, 15, 04, 05, 0, time.UTC),
 		},
 	}
+	resolveFn := ResolveByField("extra", "TestBase")
 
 	for _, test := range tests {
-		resolveFn := ResolveByField("extra", "TestBase", test.nonNull)
 		qr := &testQueryReporter{}
 		ctx := context.Background()
 		if test.wantQueriedField != "" {

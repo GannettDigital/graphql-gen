@@ -255,20 +255,28 @@ func (ob *ObjectBuilder) buildFields(sType reflect.Type, parent string, baseFiel
 		if gtype == nil {
 			continue
 		}
-		
+
 		checkType := gtype
 		nonNull := false
 		if nn, ok := gtype.(*graphql.NonNull); ok {
-			nonNull = true
 			checkType = nn.OfType
+			nonNull = true
 		}
 
 		name := fieldName(field)
+		field.Tag.Get("")
 		description := field.Tag.Get("description")
 		f := &graphql.Field{
 			Name:    name,
 			Type:    gtype,
-			Resolve: ResolveByField(name, parent, nonNull),
+			Resolve: ResolveByField(name, parent),
+		}
+		if !nonNull {
+			f = &graphql.Field{
+				Name:    name,
+				Type:    gtype,
+				Resolve: resolveNullableByField(name, parent),
+			}
 		}
 
 		if strings.HasPrefix(description, deprecationPrefix) {
@@ -406,7 +414,7 @@ func ResolveListField(name string, parent string, nonNull bool) graphql.FieldRes
 			return nil, err
 		}
 
-		resolve := ResolveByField(name, parent, nonNull)
+		resolve := ResolveByField(name, parent)
 
 		resolvedValue, err := resolve(p)
 		if err != nil {
@@ -453,11 +461,7 @@ func ResolveListField(name string, parent string, nonNull bool) graphql.FieldRes
 	}
 }
 
-// ResolveByField returns a FieldResolveFn that leverages ExtractFields for the given field name to
-// resolve the data. The resolve function assumes the entire object is available in the ResolveParams source.
-// It will also report the queried field to the QueryReporter if one is found in the context.
-// This is default resolve function used by the objectbuilder.
-func ResolveByField(name string, parent string, nonNull bool) graphql.FieldResolveFn {
+func resolveNullableByField(name, parent string) graphql.FieldResolveFn {
 	return func(p graphql.ResolveParams) (interface{}, error) {
 		if qr, ok := p.Context.Value(QueryReporterContextKey).(QueryReporter); ok && qr != nil {
 			if err := qr.QueriedField(fullFieldName(name, parent)); err != nil {
@@ -473,9 +477,32 @@ func ResolveByField(name string, parent string, nonNull bool) graphql.FieldResol
 			)
 		}
 		if f, ok := field.(time.Time); ok {
-			if !nonNull && f.IsZero() {
+			if f.IsZero() {
 				return nil, nil
 			}
+		}
+		return field, nil
+	}
+}
+
+// ResolveByField returns a FieldResolveFn that leverages ExtractFields for the given field name to
+// resolve the data. The resolve function assumes the entire object is available in the ResolveParams source.
+// It will also report the queried field to the QueryReporter if one is found in the context.
+// This is default resolve function used by the objectbuilder.
+func ResolveByField(name string, parent string) graphql.FieldResolveFn {
+	return func(p graphql.ResolveParams) (interface{}, error) {
+		if qr, ok := p.Context.Value(QueryReporterContextKey).(QueryReporter); ok && qr != nil {
+			if err := qr.QueriedField(fullFieldName(name, parent)); err != nil {
+				return nil, err
+			}
+		}
+
+		field := ExtractField(p.Source, name)
+		if field == nil {
+			return nil, graphql.NewLocatedError(
+				fmt.Errorf("failed to extract field %q value from data", name),
+				graphql.FieldASTsToNodeASTs(p.Info.FieldASTs),
+			)
 		}
 		return field, nil
 	}
