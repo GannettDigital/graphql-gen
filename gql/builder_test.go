@@ -739,7 +739,7 @@ func TestResolveByField(t *testing.T) {
 		want             interface{}
 		wantQueriedField string
 		wantErr          bool
-		nonNull          bool
+		nullableField    bool
 	}{
 		{
 			description: "Simple found test",
@@ -764,15 +764,15 @@ func TestResolveByField(t *testing.T) {
 			wantErr:          true,
 		},
 		{
-			description: "Simple found test, zero time value, nullable",
-			source:      ttZero,
-			want:        time.Time{},
+			description:   "Simple found test, zero time value, nullable",
+			source:        ttZero,
+			want:          nil,
+			nullableField: true,
 		},
 		{
 			description: "Simple found test, zero time value, non-nullable",
 			source:      ttZero,
 			want:        time.Time{},
-			nonNull:     true,
 		},
 		{
 			description: "Simple found test, valid time value",
@@ -783,6 +783,11 @@ func TestResolveByField(t *testing.T) {
 	resolveFn := ResolveByField("extra", "TestBase")
 
 	for _, test := range tests {
+		if test.nullableField {
+			resolveFn = resolveNullableByField("extra", "TestBase")
+		} else {
+			resolveFn = ResolveByField("extra", "TestBase")
+		}
 		qr := &testQueryReporter{}
 		ctx := context.Background()
 		if test.wantQueriedField != "" {
