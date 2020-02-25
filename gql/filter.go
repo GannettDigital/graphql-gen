@@ -132,6 +132,7 @@ func parseASTValue(in interface{}) (interface{}, error) {
 type listFilter struct {
 	fieldName string
 	op        Comparator
+	json      *listFilterJSON
 }
 
 // newListFilter parses a given argument into a listFilter. The type of listFilter returned is based on the operation.
@@ -162,7 +163,7 @@ func newListFilter(arg interface{}) (*listFilter, error) {
 		return nil, err
 	}
 
-	return &listFilter{fieldName: lf.Field, op: op}, nil
+	return &listFilter{fieldName: lf.Field, op: op, json: lf}, nil
 }
 
 func (lf listFilter) match(raw interface{}) (bool, error) {
