@@ -62,10 +62,20 @@ type testDoubleEmbed struct {
 
 type testQueryReporter struct {
 	queriedField string
+	sortField    string
+	sortOrder    string
+	filterJSON   string
 }
 
 func (tqr *testQueryReporter) QueriedField(field string) error {
 	tqr.queriedField = field
+	return nil
+}
+
+func (tqr *testQueryReporter) QueriedListFunctions(field string, lf ListFunctions) error {
+	tqr.sortField = lf.SortField
+	tqr.sortOrder = lf.SortOrder
+	tqr.filterJSON = lf.FilterJSON
 	return nil
 }
 

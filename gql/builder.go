@@ -418,11 +418,13 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 				lf.SortOrder = sortParams.order
 			}
 
-			filterJSON, err := json.Marshal(filter.json)
-			if err != nil {
-				return nil, fmt.Errorf("failed to marshal list filter functions, %v", err)
+			if filter != nil {
+				filterJSON, err := json.Marshal(filter.json)
+				if err != nil {
+					return nil, fmt.Errorf("failed to marshal list filter functions, %v", err)
+				}
+				lf.FilterJSON = string(filterJSON)
 			}
-			lf.FilterJSON = string(filterJSON)
 
 			if err := qr.QueriedListFunctions(fmt.Sprintf("%s_%s", parent, name), lf); err != nil {
 				return nil, err
