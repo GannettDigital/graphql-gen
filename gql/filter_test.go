@@ -152,7 +152,7 @@ func TestResolveListField(t *testing.T) {
 			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_falsename", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
 			want:        `{"data":{"q":{"items":[]}}}`,
 			wantLF: &ListFunctions{
-				FilterJSON: `{"Field":"leaf_falsename","Operation":"==","Argument":{"Value":"leaf"}}`,
+				Filter: "Field:leaf_falsename, Operation:==, Arguments:leaf",
 			},
 		},
 	}
@@ -161,7 +161,7 @@ func TestResolveListField(t *testing.T) {
 		qr := &testQueryReporter{}
 		ctx := context.Background()
 		if test.wantLF != nil {
-			ctx = context.WithValue(ctx, QueryReporterContextKey, qr)
+			ctx = context.WithValue(ctx, QueryFunctionReporterContextKey, qr)
 		}
 
 		params := graphql.Params{
@@ -176,8 +176,8 @@ func TestResolveListField(t *testing.T) {
 			err = resp.Errors[0]
 		}
 		if test.wantLF != nil {
-			if got, want := qr.filterJSON, test.wantLF.FilterJSON; got != want {
-				t.Errorf("Test %q - got filter JSON %q, want %q", test.description, got, want)
+			if got, want := qr.filter, test.wantLF.Filter; got != want {
+				t.Errorf("Test %q - got filter %q, want %q", test.description, got, want)
 			}
 		}
 		switch {

@@ -66,7 +66,7 @@ type testQueryReporter struct {
 	queriedField string
 	sortField    string
 	sortOrder    string
-	filterJSON   string
+	filter       string
 }
 
 func (tqr *testQueryReporter) QueriedField(field string) error {
@@ -80,7 +80,7 @@ func (tqr *testQueryReporter) QueriedListFunctions(field string, lf ListFunction
 	tqr.reporterMux.Lock()
 	tqr.sortField = lf.SortField
 	tqr.sortOrder = lf.SortOrder
-	tqr.filterJSON = lf.FilterJSON
+	tqr.filter = lf.Filter
 	tqr.reporterMux.Unlock()
 	return nil
 }

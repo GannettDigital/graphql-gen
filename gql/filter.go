@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/GannettDigital/graphql"
 	"github.com/GannettDigital/graphql/language/ast"
@@ -83,6 +84,14 @@ func newListFilterJSON(fields []*ast.ObjectField) (*listFilterJSON, error) {
 	}
 
 	return &lf, nil
+}
+
+func (lf listFilterJSON) String() string {
+	var arguments []string
+	for _, arg := range lf.Argument {
+		arguments = append(arguments, fmt.Sprintf("%v", arg))
+	}
+	return fmt.Sprintf("Field:%v, Operation:%v, Arguments:%v", lf.Field, lf.Operation, strings.Join(arguments, ","))
 }
 
 // parseASTValue will recursively follow a AST value structure to build up a Golang object.

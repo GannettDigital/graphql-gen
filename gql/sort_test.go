@@ -169,7 +169,7 @@ func TestListSort(t *testing.T) {
 		qr := &testQueryReporter{}
 		ctx := context.Background()
 		if test.wantLF != nil {
-			ctx = context.WithValue(ctx, QueryReporterContextKey, qr)
+			ctx = context.WithValue(ctx, QueryFunctionReporterContextKey, qr)
 		}
 		params := graphql.Params{
 			Context:       ctx,
