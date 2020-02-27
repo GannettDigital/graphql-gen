@@ -24,9 +24,6 @@ const (
 	// QueryReporterContextKey is the key used with context.WithValue to locate the QueryReporter.
 	QueryReporterContextKey = "GraphQLQueryReporter"
 
-	// QueryFunctionReporterContextKey is the key used with context.WithValue to locate the QueryReporter.
-	QueryFunctionReporterContextKey = "GraphQLQueryFunctionReporter"
-
 	deprecationPrefix  = "DEPRECATED:"
 	filterArgumentName = "filter"
 	sortArgumentName   = "sort"
@@ -420,7 +417,7 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 			return nil, err
 		}
 
-		if qr, ok := p.Context.Value(QueryFunctionReporterContextKey).(QueryFunctionReporter); ok && qr != nil {
+		if qr, ok := p.Context.Value(QueryReporterContextKey).(QueryFunctionReporter); ok && qr != nil {
 			var lf ListFunctions
 			if sortParams != nil {
 				lf.SortField = sortParams.field
