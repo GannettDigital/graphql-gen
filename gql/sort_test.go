@@ -17,6 +17,7 @@ func TestListSort(t *testing.T) {
 		query       string
 		want        string
 		wantErr     bool
+		wantLF      *ListFunctions
 	}{
 		{
 			description: "No sort argument",
@@ -153,11 +154,25 @@ func TestListSort(t *testing.T) {
 			query:       `query { q(id: "1"){ int64list(sort: {Order: "ASC"},filter: {Operation: "LIMIT", Argument:{Value: 2}})}}`,
 			want:        `{"data":{"q":{"int64list":[11,22]}}}`,
 		},
+		{
+			description: "reporting string sort ascending",
+			query:       `query { q(id: "1"){ items(sort: {Field: "name", Order: "ASC"}){name}}}`,
+			want:        `{"data":{"q":{"items":[{"name":"a"},{"name":"b"},{"name":"c"},{"name":"d"},{"name":"e"}]}}}`,
+			wantLF: &ListFunctions{
+				SortField: "name",
+				SortOrder: "ASC",
+			},
+		},
 	}
 
 	for _, test := range tests {
+		qr := &testQueryReporter{}
+		ctx := context.Background()
+		if test.wantLF != nil {
+			ctx = context.WithValue(ctx, QueryReporterContextKey, qr)
+		}
 		params := graphql.Params{
-			Context:       context.Background(),
+			Context:       ctx,
 			Schema:        s,
 			RequestString: test.query,
 		}
@@ -166,6 +181,14 @@ func TestListSort(t *testing.T) {
 		var err error
 		if len(resp.Errors) != 0 {
 			err = resp.Errors[0]
+		}
+		if test.wantLF != nil {
+			if got, want := qr.sortField, test.wantLF.SortField; got != want {
+				t.Errorf("Test %q - got sort field %q, want %q", test.description, got, want)
+			}
+			if got, want := qr.sortOrder, test.wantLF.SortOrder; got != want {
+				t.Errorf("Test %q - got sort order %q, want %q", test.description, got, want)
+			}
 		}
 		switch {
 		case test.wantErr && err != nil:

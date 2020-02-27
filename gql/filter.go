@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/GannettDigital/graphql"
 	"github.com/GannettDigital/graphql/language/ast"
@@ -85,6 +86,14 @@ func newListFilterJSON(fields []*ast.ObjectField) (*listFilterJSON, error) {
 	return &lf, nil
 }
 
+func (lf listFilterJSON) String() string {
+	var arguments []string
+	for _, arg := range lf.Argument {
+		arguments = append(arguments, fmt.Sprintf("%v", arg))
+	}
+	return fmt.Sprintf("Field:%v, Operation:%v, Arguments:%v", lf.Field, lf.Operation, strings.Join(arguments, ","))
+}
+
 // parseASTValue will recursively follow a AST value structure to build up a Golang object.
 func parseASTValue(in interface{}) (interface{}, error) {
 	value, ok := in.(ast.Value)
@@ -132,6 +141,7 @@ func parseASTValue(in interface{}) (interface{}, error) {
 type listFilter struct {
 	fieldName string
 	op        Comparator
+	json      *listFilterJSON
 }
 
 // newListFilter parses a given argument into a listFilter. The type of listFilter returned is based on the operation.
@@ -162,7 +172,7 @@ func newListFilter(arg interface{}) (*listFilter, error) {
 		return nil, err
 	}
 
-	return &listFilter{fieldName: lf.Field, op: op}, nil
+	return &listFilter{fieldName: lf.Field, op: op, json: lf}, nil
 }
 
 func (lf listFilter) match(raw interface{}) (bool, error) {

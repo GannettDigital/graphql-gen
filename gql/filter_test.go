@@ -19,6 +19,7 @@ func TestResolveListField(t *testing.T) {
 		query       string
 		want        string
 		wantErr     bool
+		wantLF      *ListFunctions
 	}{
 		{
 			description: "No filter argument",
@@ -146,11 +147,25 @@ func TestResolveListField(t *testing.T) {
 			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_falsename", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
 			want:        `{"data":{"q":{"items":[]}}}`,
 		},
+		{
+			description: "reporting 2nd level, string equal filter - second field not found",
+			query:       `query { q(id: "1"){ items(filter: {Field: "leaf_falsename", Operation: "==", Argument: {Value: "leaf"}}){name value leaf{ name }}}}`,
+			want:        `{"data":{"q":{"items":[]}}}`,
+			wantLF: &ListFunctions{
+				Filter: "Field:leaf_falsename, Operation:==, Arguments:leaf",
+			},
+		},
 	}
 
 	for _, test := range tests {
+		qr := &testQueryReporter{}
+		ctx := context.Background()
+		if test.wantLF != nil {
+			ctx = context.WithValue(ctx, QueryReporterContextKey, qr)
+		}
+
 		params := graphql.Params{
-			Context:       context.Background(),
+			Context:       ctx,
 			Schema:        s,
 			RequestString: test.query,
 		}
@@ -159,6 +174,11 @@ func TestResolveListField(t *testing.T) {
 		var err error
 		if len(resp.Errors) != 0 {
 			err = resp.Errors[0]
+		}
+		if test.wantLF != nil {
+			if got, want := qr.filter, test.wantLF.Filter; got != want {
+				t.Errorf("Test %q - got filter %q, want %q", test.description, got, want)
+			}
 		}
 		switch {
 		case test.wantErr && err != nil:

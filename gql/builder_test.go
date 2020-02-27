@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"reflect"
+	"sync"
 	"testing"
 	"time"
 
@@ -61,11 +62,26 @@ type testDoubleEmbed struct {
 }
 
 type testQueryReporter struct {
+	reporterMux  sync.Mutex
 	queriedField string
+	sortField    string
+	sortOrder    string
+	filter       string
 }
 
 func (tqr *testQueryReporter) QueriedField(field string) error {
+	tqr.reporterMux.Lock()
 	tqr.queriedField = field
+	tqr.reporterMux.Unlock()
+	return nil
+}
+
+func (tqr *testQueryReporter) QueriedListFunctions(field string, lf ListFunctions) error {
+	tqr.reporterMux.Lock()
+	tqr.sortField = lf.SortField
+	tqr.sortOrder = lf.SortOrder
+	tqr.filter = lf.Filter
+	tqr.reporterMux.Unlock()
 	return nil
 }
 

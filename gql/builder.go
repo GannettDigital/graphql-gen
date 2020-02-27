@@ -38,12 +38,27 @@ var graphqlKinds = map[reflect.Kind]graphql.Type{
 	reflect.String:  graphql.String,
 }
 
+type ListFunctions struct {
+	SortField string
+	SortOrder string
+	Filter    string
+}
+
 // QueryReporter defines the interface used to report details on the GraphQL queries being performed.
 // Implementations must be concurrency safe and added to the request context using QueryReporterContextKey as the
 // context value key.
 type QueryReporter interface {
 	// QueriedField is called by the default resolve function used for fields within the GraphQL query.
 	QueriedField(string) error
+}
+
+// QueryFunctionReporter defines the interface used to report details on the GraphQL queries functions being performed.
+// Query functions include list filtering and list sorting.
+// Implementations must be concurrency safe and added to the request context using QueryFunctionReporterContextKey as
+// the context value key.
+type QueryFunctionReporter interface {
+	// QueriedListFunctions is called by the list resolve function used for filtered fields within the GraphQL query.
+	QueriedListFunctions(string, ListFunctions) error
 }
 
 // ObjectBuilder is used to build GraphGL Objects based on the fields within a set of structs.
@@ -400,6 +415,22 @@ func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 		sortParams, err := parseSortParameters(p.Args[sortArgumentName])
 		if err != nil {
 			return nil, err
+		}
+
+		if qr, ok := p.Context.Value(QueryReporterContextKey).(QueryFunctionReporter); ok && qr != nil {
+			var lf ListFunctions
+			if sortParams != nil {
+				lf.SortField = sortParams.field
+				lf.SortOrder = sortParams.order
+			}
+
+			if filter != nil {
+				lf.Filter = filter.json.String()
+			}
+
+			if err := qr.QueriedListFunctions(fmt.Sprintf("%s_%s", parent, name), lf); err != nil {
+				return nil, err
+			}
 		}
 
 		resolve := ResolveByField(name, parent)
