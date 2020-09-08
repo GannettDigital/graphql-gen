@@ -663,6 +663,7 @@ func TestGraphQLType(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	now := time.Now()
 
 	tests := []struct {
 		description string
@@ -707,6 +708,11 @@ func TestGraphQLType(t *testing.T) {
 		{
 			description: "slice of time.Time",
 			sType:       reflect.TypeOf([]time.Time{time.Now()}),
+			want:        graphql.NewList(graphql.DateTime),
+		},
+		{
+			description: "slice of *time.Time",
+			sType:       reflect.TypeOf([]*time.Time{&now}),
 			want:        graphql.NewList(graphql.DateTime),
 		},
 		{

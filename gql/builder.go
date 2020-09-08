@@ -355,7 +355,10 @@ func (ob *ObjectBuilder) fieldGraphQLType(field reflect.StructField, parent stri
 func (ob *ObjectBuilder) graphQLType(rType reflect.Type, name, parent string) graphql.Type {
 	var gtype graphql.Type
 	kind := rType.Kind()
+
 	switch kind {
+	case reflect.Ptr:
+		return ob.graphQLType(rType.Elem(), name, parent)
 	case reflect.Struct:
 		if rType.PkgPath() == "time" {
 			gtype = graphql.DateTime
