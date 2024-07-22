@@ -36,6 +36,7 @@ var graphqlKinds = map[reflect.Kind]graphql.Type{
 	reflect.Int:     graphql.Int,
 	reflect.Int64:   graphql.Int,
 	reflect.String:  graphql.String,
+	reflect.Map:     graphql.Map,
 }
 
 type ListFunctions struct {
@@ -401,14 +402,14 @@ func (ob *ObjectBuilder) resolveObjectByName(p graphql.ResolveTypeParams) *graph
 // Sorting occurs before filtering as some filters limit the total returned size of the list.
 //
 // Example:
-//  {
-//    query(id: "blah") {
-//      modules(filter: {Field: "moduleName", Operation: "==", Argument: {Value: "foo"}}, sort: {Field: "module_type", Order: "ASC"}) {
-//        moduleName
-//      }
-//    }
-//  }
 //
+//	{
+//	  query(id: "blah") {
+//	    modules(filter: {Field: "moduleName", Operation: "==", Argument: {Value: "foo"}}, sort: {Field: "module_type", Order: "ASC"}) {
+//	      moduleName
+//	    }
+//	  }
+//	}
 func ResolveListField(name string, parent string) graphql.FieldResolveFn {
 	return func(p graphql.ResolveParams) (interface{}, error) {
 		filter, err := newListFilter(p.Args[filterArgumentName])
